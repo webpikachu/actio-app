@@ -1,73 +1,197 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html class="dark" lang="ru">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>ACTIO - Модульный Профиль</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined:wght@300" rel="stylesheet"/>
+    
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0d7ff2",
+                        "surface-dark": "#182634",
+                        "border-dark": "#314d68",
+                        "background-dark": "#101922"
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        body { font-family: sans-serif; background-color: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #000); padding: 20px; }
-        .card { border: 1px solid #e0e0e0; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .btn { background: #00C853; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .btn:disabled { background: #ccc; }
-        .status { font-size: 0.8em; color: #666; margin-top: 10px; text-align: center; }
+        body { -webkit-tap-highlight-color: transparent; }
+        .page { display: none; }
+        .page.active { display: flex; }
     </style>
 </head>
-<body>
-    <h2>ACTIO: Маркетплейс</h2>
-    
-    <div class="card">
-        <h3>Менеджер по продажам</h3>
-        <p>Срок ответа HR: <b>24 часа</b></p>
-        <button class="btn" onclick="apply('Sales Manager')">Откликнуться</button>
+<body class="bg-background-dark text-white font-sans min-h-screen flex flex-col antialiased">
+
+    <div id="page-market" class="page active flex-col min-h-screen">
+        <header class="sticky top-0 z-50 px-4 py-4 bg-background-dark/95 backdrop-blur-md border-b border-border-dark/50 flex justify-between items-center">
+            <h1 class="text-xl font-bold">ACTIO Market</h1>
+            <button onclick="showPage('page-profile')" class="text-primary font-medium flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm">add_circle</span>
+                Мои Роли
+            </button>
+        </header>
+
+        <main class="p-4 flex flex-col gap-4">
+            <div class="bg-surface-dark p-5 rounded-2xl border border-border-dark/50 shadow-sm">
+                <h3 class="text-lg font-bold mb-1">Менеджер по продажам</h3>
+                <p class="text-gray-400 text-sm mb-4">Термін відповіді HR: <span class="text-green-400 font-bold">24 години</span></p>
+                <button onclick="apply('Sales Manager')" id="apply-btn" class="w-full py-3 bg-primary hover:bg-blue-600 rounded-xl font-bold transition-all active:scale-95">
+                    Відгукнутися
+                </button>
+            </div>
+            <div id="market-status" class="text-center text-sm text-gray-500"></div>
+        </main>
     </div>
 
-    <div id="status" class="status"></div>
+    <div id="page-profile" class="page flex-col min-h-screen">
+        <header class="sticky top-0 z-50 flex items-center justify-between px-4 py-3 bg-background-dark/95 backdrop-blur-md border-b border-border-dark/50">
+            <button onclick="showPage('page-market')" class="flex items-center text-primary transition-colors active:scale-95">
+                <span class="material-symbols-outlined">arrow_back_ios_new</span>
+                <span class="ml-1">Назад</span>
+            </button>
+            <h1 class="text-[17px] font-bold">Создать роль</h1>
+            <div class="w-10"></div>
+        </header>
+
+        <main class="flex-1 p-4 flex flex-col gap-6">
+            <section class="flex flex-col gap-2">
+                <label class="text-xs font-medium text-gray-500 uppercase tracking-wider ml-1">Название Роли</label>
+                <input id="role-name" type="text" placeholder="Например, Python Dev" class="w-full h-14 px-4 rounded-xl border-border-dark bg-surface-dark text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none">
+            </section>
+
+            <section class="flex flex-col gap-3">
+                <label class="text-xs font-medium text-gray-500 uppercase tracking-wider ml-1">Навыки</label>
+                <div id="skills-container" class="flex flex-wrap gap-2">
+                    </div>
+                <div class="flex">
+                    <input id="skill-input" type="text" placeholder="Добавить навык..." class="flex-1 h-12 px-4 rounded-l-xl border-border-dark bg-surface-dark text-white focus:ring-1 focus:ring-primary outline-none">
+                    <button onclick="addSkill()" class="px-4 bg-border-dark rounded-r-xl hover:bg-primary transition-colors">
+                        <span class="material-symbols-outlined">add</span>
+                    </button>
+                </div>
+            </section>
+
+            <section class="flex flex-col gap-2">
+                <label class="text-xs font-medium text-gray-500 uppercase tracking-wider ml-1">Опыт работы</label>
+                <textarea id="experience" class="w-full min-h-[120px] p-4 rounded-xl border-border-dark bg-surface-dark text-white focus:ring-2 focus:ring-primary outline-none resize-none" placeholder="Опишите ваши достижения..."></textarea>
+            </section>
+        </main>
+
+        <div class="p-4 pb-8">
+            <button onclick="saveRole()" id="save-btn" class="w-full h-14 bg-primary hover:bg-blue-600 text-white text-lg font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined">save</span>
+                Сохранить Роль
+            </button>
+        </div>
+    </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Данные подключения
         const SUPABASE_URL = "https://cgdeaibhadwsxqebohcj.supabase.co";
-        // ВНИМАНИЕ: Проверь этот ключ! Он должен быть очень длинным (начинаться на eyJ...)
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZGVhaWJoYWR3c3hxZWJvaGNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2NzQ0OTYsImV4cCI6MjA4MjI1MDQ5Nn0._JQQBh9JVswhMoxmthN2U1l-Bvs65-bSSsNdv51sPvQ"; 
-
-        // ИСПРАВЛЕНИЕ: Используем другое имя переменной (client), чтобы не было конфликта
         const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        async function apply(roleName) {
-            const btn = document.querySelector('.btn');
-            const statusDiv = document.getElementById('status');
+        let currentSkills = ['Python', 'Django'];
+
+        // Навигация
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        // Логика навыков
+        function renderSkills() {
+            const container = document.getElementById('skills-container');
+            container.innerHTML = currentSkills.map((s, i) => `
+                <div class="flex items-center h-8 px-3 rounded-lg bg-primary/20 border border-primary/30">
+                    <span class="text-sm mr-2">${s}</span>
+                    <button onclick="removeSkill(${i})" class="material-symbols-outlined text-xs hover:text-red-500">close</button>
+                </div>
+            `).join('');
+        }
+
+        function addSkill() {
+            const input = document.getElementById('skill-input');
+            if (input.value.trim()) {
+                currentSkills.push(input.value.trim());
+                input.value = '';
+                renderSkills();
+            }
+        }
+
+        function removeSkill(i) {
+            currentSkills.splice(i, 1);
+            renderSkills();
+        }
+
+        // СОХРАНЕНИЕ РОЛИ
+        async function saveRole() {
+            const btn = document.getElementById('save-btn');
+            const name = document.getElementById('role-name').value;
+            const exp = document.getElementById('experience').value;
+
+            if (!name) return alert("Введите название роли!");
+
             btn.disabled = true;
-            statusDiv.innerText = "Сигнал отправляется...";
+            btn.innerText = "Сохранение...";
+
+            const { error } = await client.from('user_roles').insert([{
+                user_id: tg.initDataUnsafe?.user?.id || 0,
+                role_name: name,
+                skills: currentSkills,
+                experience: exp
+            }]);
+
+            if (error) {
+                alert("Ошибка: " + error.message);
+                btn.disabled = false;
+            } else {
+                tg.showAlert("Роль успешно создана! Теперь вы можете использовать её для откликов.");
+                showPage('page-market');
+                btn.disabled = false;
+                btn.innerHTML = `<span class="material-symbols-outlined">save</span> Сохранить Роль`;
+            }
+        }
+
+        // ОТКЛИК (Старая логика, но в новом стиле)
+        async function apply(roleName) {
+            const btn = document.getElementById('apply-btn');
+            const status = document.getElementById('market-status');
+            btn.disabled = true;
+            status.innerText = "Отправка сигнала...";
 
             try {
-                // Используем переменную client вместо supabase
-                const { data, error } = await client
-                    .from('applications')
-                    .insert([
-                        { 
-                            candidate_name: tg.initDataUnsafe?.user?.first_name || "Unknown User",
-                            role: roleName,
-                            status: 'pending'
-                        }
-                    ]);
+                const { error } = await client.from('applications').insert([{ 
+                    candidate_name: tg.initDataUnsafe?.user?.first_name || "Lailo",
+                    role: roleName,
+                    status: 'pending'
+                }]);
 
                 if (error) throw error;
 
-                statusDiv.innerText = "Успех! HR уведомлен.";
-                
-                // Отправляем сигнал боту (сработает только внутри Telegram)
+                status.innerText = "Успех! HR уведомлен.";
                 tg.sendData(JSON.stringify({ action: 'new_apply', role: roleName }));
-                
                 setTimeout(() => tg.close(), 1500);
 
             } catch (err) {
-                console.error(err);
-                statusDiv.innerText = "Ошибка: " + err.message;
+                status.innerText = "Ошибка: " + err.message;
                 btn.disabled = false;
             }
         }
+
+        renderSkills();
     </script>
 </body>
 </html>
