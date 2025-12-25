@@ -27,10 +27,13 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // ВСТАВЬ СВОИ ДАННЫЕ ИЗ SUPABASE ТУТ:
+        // Данные подключения
         const SUPABASE_URL = "https://cgdeaibhadwsxqebohcj.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_MbCLu_b0E6FCT-tIJltjOA_d1TYBsgN";
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // ВНИМАНИЕ: Проверь этот ключ! Он должен быть очень длинным (начинаться на eyJ...)
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZGVhaWJoYWR3c3hxZWJvaGNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2NzQ0OTYsImV4cCI6MjA4MjI1MDQ5Nn0._JQQBh9JVswhMoxmthN2U1l-Bvs65-bSSsNdv51sPvQ"; 
+
+        // ИСПРАВЛЕНИЕ: Используем другое имя переменной (client), чтобы не было конфликта
+        const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         async function apply(roleName) {
             const btn = document.querySelector('.btn');
@@ -38,29 +41,33 @@
             btn.disabled = true;
             statusDiv.innerText = "Сигнал отправляется...";
 
-            // 1. Записываем действие в базу (Праксеология в деле)
-            const { data, error } = await supabase
-                .from('applications')
-                .insert([
-                    { 
-                        candidate_name: tg.initDataUnsafe?.user?.first_name || "Unknown",
-                        role: roleName,
-                        status: 'pending'
-                    }
-                ]);
+            try {
+                // Используем переменную client вместо supabase
+                const { data, error } = await client
+                    .from('applications')
+                    .insert([
+                        { 
+                            candidate_name: tg.initDataUnsafe?.user?.first_name || "Unknown User",
+                            role: roleName,
+                            status: 'pending'
+                        }
+                    ]);
 
-            if (error) {
-                statusDiv.innerText = "Ошибка: " + error.message;
-                btn.disabled = false;
-            } else {
+                if (error) throw error;
+
                 statusDiv.innerText = "Успех! HR уведомлен.";
-                // 2. Отправляем короткий сигнал боту, чтобы он прислал Push HR-у
+                
+                // Отправляем сигнал боту (сработает только внутри Telegram)
                 tg.sendData(JSON.stringify({ action: 'new_apply', role: roleName }));
                 
                 setTimeout(() => tg.close(), 1500);
+
+            } catch (err) {
+                console.error(err);
+                statusDiv.innerText = "Ошибка: " + err.message;
+                btn.disabled = false;
             }
         }
     </script>
 </body>
-
 </html>
