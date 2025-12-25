@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: sans-serif; background-color: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #000); padding: 20px; }
+        .card { border: 1px solid #e0e0e0; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .btn { background: #00C853; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn:disabled { background: #ccc; }
+        .status { font-size: 0.8em; color: #666; margin-top: 10px; text-align: center; }
+    </style>
+</head>
+<body>
+    <h2>ACTIO: Маркетплейс</h2>
+    
+    <div class="card">
+        <h3>Менеджер по продажам</h3>
+        <p>Срок ответа HR: <b>24 часа</b></p>
+        <button class="btn" onclick="apply('Sales Manager')">Откликнуться</button>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // ВСТАВЬ СВОИ ДАННЫЕ ИЗ SUPABASE ТУТ:
+        const SUPABASE_URL = "https://cgdeaibhadwsxqebohcj.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZGVhaWJoYWR3c3hxZWJvaGNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2NzQ0OTYsImV4cCI6MjA4MjI1MDQ5Nn0._JQQBh9JVswhMoxmthN2U1l-Bvs65-bSSsNdv51sPvQ";
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function apply(roleName) {
+            const btn = document.querySelector('.btn');
+            const statusDiv = document.getElementById('status');
+            btn.disabled = true;
+            statusDiv.innerText = "Сигнал отправляется...";
+
+            // 1. Записываем действие в базу (Праксеология в деле)
+            const { data, error } = await supabase
+                .from('applications')
+                .insert([
+                    { 
+                        candidate_name: tg.initDataUnsafe?.user?.first_name || "Unknown",
+                        role: roleName,
+                        status: 'pending'
+                    }
+                ]);
+
+            if (error) {
+                statusDiv.innerText = "Ошибка: " + error.message;
+                btn.disabled = false;
+            } else {
+                statusDiv.innerText = "Успех! HR уведомлен.";
+                // 2. Отправляем короткий сигнал боту, чтобы он прислал Push HR-у
+                tg.sendData(JSON.stringify({ action: 'new_apply', role: roleName }));
+                
+                setTimeout(() => tg.close(), 1500);
+            }
+        }
+    </script>
+</body>
+</html>
