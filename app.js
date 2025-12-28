@@ -5,32 +5,33 @@ const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let userRole = 'candidate';
 let selectedVacancy = null;
-let currentSkills = []; // Массив для навыков
-let selectedRoleName = "";
+let currentSkills = [];
 
-// --- 1. ИНИЦИАЛИЗАЦИЯ ---
+// --- ИНИЦИАЛИЗАЦИЯ ---
 async function init() {
-    try {
-        tg.expand();
-        tg.ready();
-        // Используем ID из Telegram или тестовый из базы (1205293207)
-        const userId = tg.initDataUnsafe?.user?.id || 1205293207; 
-        
-        const { data: profile } = await client.from('profiles').select('role').eq('user_id', userId).single();
-        if (profile) userRole = profile.role;
-        
-        renderHeader();
-        loadMarket();
-    } catch (e) { 
-        console.error("Init Error:", e); 
-        renderHeader(); 
-        loadMarket(); 
+    tg.expand();
+    tg.ready();
+    const userId = tg.initDataUnsafe?.user?.id || 1205293207; 
+    
+    const { data: profile } = await client.from('profiles').select('role').eq('user_id', userId).single();
+    if (profile) userRole = profile.role;
+    
+    renderHeader();
+    loadMarket();
+}
+
+function renderHeader() {
+    const actions = document.getElementById('header-actions');
+    if (userRole === 'hr') {
+        actions.innerHTML = `<button onclick="showPage('page-post-vacancy')" class="bg-primary px-4 py-1.5 rounded-full text-xs font-bold shadow-lg">+ Вакансия</button>`;
+    } else {
+        actions.innerHTML = `<button onclick="showPage('page-profile')" class="text-primary font-bold italic">Мои Роли</button>`;
     }
 }
 
-// --- 2. КОНСТРУКТОР РОЛЕЙ (ФУНКЦИИ) ---
-
+// --- ФУНКЦИИ КОНСТРУКТОРА РОЛЕЙ ---
 function addSkill() {
+    console.log("ACTIO: Нажата кнопка добавить навык");
     const input = document.getElementById('skill-input');
     const val = input.value.trim();
     if (val && !currentSkills.includes(val)) {
@@ -47,111 +48,54 @@ function removeSkill(index) {
 
 function renderSkills() {
     const container = document.getElementById('skills-container');
-    if (!container) return;
     container.innerHTML = currentSkills.map((s, i) => `
         <div class="flex items-center h-8 px-3 rounded-lg bg-primary/10 border border-primary/20">
             <span class="text-sm mr-1 font-medium">${s}</span>
-            <span onclick="removeSkill(${i})" class="material-symbols-outlined text-[16px] cursor-pointer hover:text-red-500">close</span>
+            <span onclick="removeSkill(${i})" class="material-symbols-outlined text-[16px] cursor-pointer">close</span>
         </div>
     `).join('');
 }
 
-// ФИКС СОХРАНЕНИЯ РОЛИ
 async function saveRole() {
-    console.log("ACTIO: Попытка сохранения роли...");
-    
-    const nameInput = document.getElementById('role-name');
-    const expInput = document.getElementById('experience');
+    console.log("ACTIO: Нажата кнопка Сохранить Роль");
     const btn = document.getElementById('save-role-btn');
-
-    const name = nameInput.value.trim();
-    const exp = expInput.value.trim();
+    const name = document.getElementById('role-name').value.trim();
+    const exp = document.getElementById('experience').value.trim();
 
     if (!name) return tg.showAlert("Введите название роли!");
 
     btn.disabled = true;
     btn.innerText = "Сохранение...";
 
-    try {
-        const userId = tg.initDataUnsafe?.user?.id || 1205293207;
+    const userId = tg.initDataUnsafe?.user?.id || 1205293207;
 
-        const roleData = {
-            user_id: userId,
-            role_name: name,
-            skills: currentSkills,
-            experience: exp
-        };
-
-        console.log("ACTIO: Отправка данных:", roleData);
-
-        const { data, error } = await client
-            .from('user_roles')
-            .insert([roleData]);
-
-        if (error) {
-            console.error("Supabase Error:", error);
-            throw error;
-        }
-
-        tg.showAlert("Роль успешно сохранена!");
-        
-        // Очистка и переход
-        nameInput.value = '';
-        expInput.value = '';
-        currentSkills = [];
-        renderSkills();
-        showPage('page-market');
-        
-    } catch (err) {
-        tg.showAlert("Ошибка: " + err.message);
-    } finally {
-        btn.disabled = false;
-        btn.innerText = "Сохранить Роль";
-    }
-}
-
-// --- 3. ОСТАЛЬНАЯ ЛОГИКА ---
-
-function renderHeader() {
-    const actions = document.getElementById('header-actions');
-    if (userRole === 'hr') {
-        actions.innerHTML = `<button onclick="showPage('page-post-vacancy')" class="bg-primary px-4 py-1.5 rounded-full text-xs font-bold shadow-lg">+ Вакансия</button>`;
-    } else {
-        actions.innerHTML = `<button onclick="showPage('page-profile')" class="text-primary font-bold italic">Мои Роли</button>`;
-    }
-}
-
-async function publishVacancy() {
-    const title = document.getElementById('v-title').value;
-    const city = document.getElementById('v-city').value;
-    const desc = document.getElementById('v-desc').value;
-    const level = document.querySelector('input[name="level"]:checked')?.value || 'middle';
-    const sMin = parseInt(document.getElementById('v-salary-min').value) || 0;
-    const sMax = parseInt(document.getElementById('v-salary-max').value) || 0;
-
-    if (!title) return tg.showAlert("Введите название!");
-
-    const { error } = await client.from('vacancies').insert([{
-        hr_id: tg.initDataUnsafe?.user?.id || 1205293207,
-        title, city, level, description: desc, salary_min: sMin, salary_max: sMax
+    const { error } = await client.from('user_roles').insert([{
+        user_id: userId,
+        role_name: name,
+        skills: currentSkills,
+        experience: exp
     }]);
 
     if (!error) {
-        tg.showAlert("Вакансия на рынке!");
+        tg.showAlert("Успешно сохранено!");
         showPage('page-market');
-        loadMarket();
+    } else {
+        tg.showAlert("Ошибка: " + error.message);
     }
+    btn.disabled = false;
+    btn.innerText = "Сохранить Роль";
 }
 
+// --- ЛОГИКА МАРКЕТА ---
 async function loadMarket() {
     const list = document.getElementById('vacancies-list');
-    list.innerHTML = `<p class='text-center py-10 opacity-50 italic'>Синхронизация...</p>`;
+    list.innerHTML = `<p class='text-center py-10 opacity-50 italic'>Загрузка...</p>`;
     const { data } = await client.from('vacancies').select('*').order('created_at', { ascending: false });
     if (data) {
         list.innerHTML = data.map(v => `
             <div onclick="openVacancy('${v.id}')" class="bg-surface-dark p-5 rounded-2xl border border-border-dark active:scale-[0.98] transition-all">
                 <h3 class="text-lg font-bold italic">${v.title}</h3>
-                <p class="text-[10px] text-gray-500 uppercase font-bold mt-2">${v.city || 'Удаленно'} • ${v.salary_min} ₽</p>
+                <p class="text-[10px] text-gray-400 mt-2">${v.city || 'Удаленно'} • ${v.salary_min} ₽</p>
             </div>
         `).join('');
     }
@@ -164,10 +108,9 @@ async function openVacancy(id) {
         document.getElementById('v-details-content').innerHTML = `
             <div class="p-8 text-center bg-surface-dark mb-4 border-b border-border-dark">
                 <h2 class="text-2xl font-bold italic">${v.title}</h2>
-                <p class="text-primary font-bold mt-1 uppercase text-xs">${v.city} • ${v.level}</p>
+                <p class="text-primary font-bold mt-1 uppercase text-xs">${v.city}</p>
             </div>
             <div class="px-6 space-y-4">
-                <h3 class="text-gray-500 font-bold uppercase text-[10px] tracking-widest">Описание</h3>
                 <p class="text-gray-300 leading-relaxed">${v.description || 'Описание отсутствует'}</p>
             </div>
         `;
@@ -175,33 +118,15 @@ async function openVacancy(id) {
     }
 }
 
-async function openRoleSheet() {
-    document.getElementById('overlay').classList.remove('hidden');
-    document.getElementById('role-sheet').classList.add('active');
-    const userId = tg.initDataUnsafe?.user?.id || 1205293207;
-    const { data } = await client.from('user_roles').select('*').eq('user_id', userId);
-    const container = document.getElementById('roles-list-container');
-    if (data && data.length > 0) {
-        container.innerHTML = data.map(r => `
-            <label class="flex items-center justify-between p-4 rounded-xl border border-border-dark bg-surface-dark">
-                <span class="font-bold">${r.role_name}</span>
-                <input type="radio" name="r_sel" value="${r.role_name}" onchange="selectedRoleName='${r.role_name}'" class="w-6 h-6 text-primary">
-            </label>
-        `).join('');
-    } else {
-        container.innerHTML = `<p class="text-center py-4 text-gray-500">У вас нет созданных ролей.</p>`;
-    }
-}
-
-function confirmApply() {
-    if (!selectedRoleName) return tg.showAlert("Выберите роль!");
-    tg.sendData(JSON.stringify({ action: 'new_apply', hr_id: selectedVacancy.hr_id, role: selectedVacancy.title }));
-    tg.close();
-}
-
 function showPage(id) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(id).classList.add('active');
+    if (id === 'page-profile') renderSkills();
+}
+
+function openRoleSheet() {
+    document.getElementById('overlay').classList.remove('hidden');
+    document.getElementById('role-sheet').classList.add('active');
 }
 
 function closeRoleSheet() {
