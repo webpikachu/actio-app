@@ -5,7 +5,7 @@ const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let userRole = 'candidate';
 let selectedVacancy = null;
-let currentSkills = []; // Массив для хранения навыков
+let currentSkills = []; // Массив для навыков
 let selectedRoleName = "";
 
 // --- 1. ИНИЦИАЛИЗАЦИЯ ---
@@ -13,6 +13,7 @@ async function init() {
     try {
         tg.expand();
         tg.ready();
+        // Используем ID из Telegram или тестовый из базы (1205293207)
         const userId = tg.initDataUnsafe?.user?.id || 1205293207; 
         
         const { data: profile } = await client.from('profiles').select('role').eq('user_id', userId).single();
@@ -27,9 +28,8 @@ async function init() {
     }
 }
 
-// --- 2. КОНСТРУКТОР РОЛЕЙ (ПРОФИЛЬ) ---
+// --- 2. КОНСТРУКТОР РОЛЕЙ (ФУНКЦИИ) ---
 
-// Функция добавления навыка
 function addSkill() {
     const input = document.getElementById('skill-input');
     const val = input.value.trim();
@@ -40,13 +40,11 @@ function addSkill() {
     }
 }
 
-// Функция удаления навыка
 function removeSkill(index) {
     currentSkills.splice(index, 1);
     renderSkills();
 }
 
-// Отрисовка чипсов навыков
 function renderSkills() {
     const container = document.getElementById('skills-container');
     if (!container) return;
@@ -58,8 +56,10 @@ function renderSkills() {
     `).join('');
 }
 
-// ФУНКЦИЯ СОХРАНЕНИЯ РОЛИ (ФИКС)
+// ФИКС СОХРАНЕНИЯ РОЛИ
 async function saveRole() {
+    console.log("ACTIO: Попытка сохранения роли...");
+    
     const nameInput = document.getElementById('role-name');
     const expInput = document.getElementById('experience');
     const btn = document.getElementById('save-role-btn');
@@ -69,47 +69,53 @@ async function saveRole() {
 
     if (!name) return tg.showAlert("Введите название роли!");
 
-    // Визуальный фидбек
     btn.disabled = true;
     btn.innerText = "Сохранение...";
 
     try {
         const userId = tg.initDataUnsafe?.user?.id || 1205293207;
 
-        const { error } = await client.from('user_roles').insert([{
+        const roleData = {
             user_id: userId,
             role_name: name,
             skills: currentSkills,
             experience: exp
-        }]);
+        };
 
-        if (error) throw error;
+        console.log("ACTIO: Отправка данных:", roleData);
+
+        const { data, error } = await client
+            .from('user_roles')
+            .insert([roleData]);
+
+        if (error) {
+            console.error("Supabase Error:", error);
+            throw error;
+        }
 
         tg.showAlert("Роль успешно сохранена!");
         
-        // Очистка формы
+        // Очистка и переход
         nameInput.value = '';
         expInput.value = '';
         currentSkills = [];
         renderSkills();
-        
-        // Переход на маркет
         showPage('page-market');
+        
     } catch (err) {
-        console.error("Save Error:", err.message);
-        tg.showAlert("Ошибка сохранения: " + err.message);
+        tg.showAlert("Ошибка: " + err.message);
     } finally {
         btn.disabled = false;
         btn.innerText = "Сохранить Роль";
     }
 }
 
-// --- 3. ОСТАЛЬНАЯ ЛОГИКА (HR И МАРКЕТ) ---
+// --- 3. ОСТАЛЬНАЯ ЛОГИКА ---
 
 function renderHeader() {
     const actions = document.getElementById('header-actions');
     if (userRole === 'hr') {
-        actions.innerHTML = `<button onclick="showPage('page-post-vacancy')" class="bg-primary px-4 py-1.5 rounded-full text-xs font-bold shadow-lg shadow-blue-500/20 active:scale-95 transition-all">+ Вакансия</button>`;
+        actions.innerHTML = `<button onclick="showPage('page-post-vacancy')" class="bg-primary px-4 py-1.5 rounded-full text-xs font-bold shadow-lg">+ Вакансия</button>`;
     } else {
         actions.innerHTML = `<button onclick="showPage('page-profile')" class="text-primary font-bold italic">Мои Роли</button>`;
     }
@@ -126,7 +132,7 @@ async function publishVacancy() {
     if (!title) return tg.showAlert("Введите название!");
 
     const { error } = await client.from('vacancies').insert([{
-        hr_id: tg.initDataUnsafe?.user?.id,
+        hr_id: tg.initDataUnsafe?.user?.id || 1205293207,
         title, city, level, description: desc, salary_min: sMin, salary_max: sMax
     }]);
 
@@ -172,7 +178,8 @@ async function openVacancy(id) {
 async function openRoleSheet() {
     document.getElementById('overlay').classList.remove('hidden');
     document.getElementById('role-sheet').classList.add('active');
-    const { data } = await client.from('user_roles').select('*').eq('user_id', tg.initDataUnsafe?.user?.id);
+    const userId = tg.initDataUnsafe?.user?.id || 1205293207;
+    const { data } = await client.from('user_roles').select('*').eq('user_id', userId);
     const container = document.getElementById('roles-list-container');
     if (data && data.length > 0) {
         container.innerHTML = data.map(r => `
