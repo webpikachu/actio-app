@@ -2,7 +2,7 @@
 <html class="dark" lang="ru">
 <head>
     <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>ACTIO - Modular App</title>
+    <title>ACTIO - Marketplace</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
@@ -17,6 +17,10 @@
         .page { display: none; height: 100vh; flex-direction: column; overflow: hidden; }
         .page.active { display: flex; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        #role-sheet { transform: translateY(100%); transition: transform 0.3s ease; z-index: 60; }
+        #role-sheet.active { transform: translateY(0); }
+        #overlay { opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 50; }
+        #overlay.active { opacity: 1; pointer-events: auto; }
         input[type="radio"]:checked + div { background-color: #0d7ff2; color: white; border-color: #0d7ff2; }
     </style>
 </head>
@@ -37,8 +41,8 @@
         </header>
         <main class="flex-1 overflow-y-auto no-scrollbar p-4 space-y-6 pb-32">
             <div class="bg-surface-dark rounded-xl border border-border-dark overflow-hidden">
-                <input id="v-title" type="text" placeholder="Название вакансии" class="w-full bg-transparent border-none p-4 h-14 outline-none">
-                <input id="v-city" type="text" placeholder="Город" class="w-full bg-transparent border-t border-border-dark p-4 h-14 outline-none">
+                <input id="v-title" type="text" placeholder="Название вакансии" class="w-full bg-transparent border-none p-4 h-14 outline-none focus:ring-0">
+                <input id="v-city" type="text" placeholder="Город" class="w-full bg-transparent border-t border-border-dark p-4 h-14 outline-none focus:ring-0">
             </div>
             <div class="space-y-2">
                 <label class="text-[13px] uppercase text-gray-400 font-medium">Уровень</label>
@@ -48,9 +52,36 @@
                     <label class="flex-1 cursor-pointer"><input type="radio" name="level" value="senior" class="sr-only"><div class="py-2 text-center rounded-md">Senior</div></label>
                 </div>
             </div>
-            <textarea id="v-desc" placeholder="Описание..." class="w-full bg-surface-dark border border-border-dark rounded-xl p-4 min-h-[160px]"></textarea>
-            <button onclick="publishVacancy()" id="publish-btn" class="w-full bg-primary h-14 rounded-xl font-bold">Опубликовать</button>
+            <div class="space-y-2">
+                <label class="text-[13px] uppercase text-gray-400 font-medium">Зарплата (в месяц)</label>
+                <div class="flex gap-2">
+                    <input id="v-salary-min" type="number" placeholder="От" class="flex-1 bg-surface-dark border-border-dark rounded-xl h-12 px-4 focus:ring-1 focus:ring-primary">
+                    <input id="v-salary-max" type="number" placeholder="До" class="flex-1 bg-surface-dark border-border-dark rounded-xl h-12 px-4 focus:ring-1 focus:ring-primary">
+                </div>
+            </div>
+            <textarea id="v-desc" placeholder="Описание вакансии..." class="w-full bg-surface-dark border border-border-dark rounded-xl p-4 min-h-[160px] focus:ring-0"></textarea>
+            <button onclick="publishVacancy()" id="publish-btn" class="w-full bg-primary h-14 rounded-xl font-bold active:scale-95 transition-all">Опубликовать</button>
         </main>
+    </div>
+
+    <div id="page-vacancy-details" class="page bg-black">
+        <header class="p-4 border-b border-border-dark flex items-center bg-surface-dark sticky top-0">
+            <button onclick="showPage('page-market')" class="material-symbols-outlined text-gray-400 mr-4">close</button>
+            <h1 class="flex-1 text-center font-semibold text-[17px] pr-8">Детали Вакансии</h1>
+        </header>
+        <main id="v-details-content" class="flex-1 overflow-y-auto no-scrollbar pb-32"></main>
+        <footer class="fixed bottom-0 left-0 right-0 p-4 pb-8 bg-black/90 backdrop-blur-md border-t border-border-dark z-20">
+            <button onclick="openRoleSheet()" class="w-full bg-primary h-14 rounded-xl font-bold flex items-center justify-center gap-2">
+                Откликнуться в 1 клик <span class="material-symbols-outlined">send</span>
+            </button>
+        </footer>
+    </div>
+
+    <div id="overlay" onclick="closeRoleSheet()" class="fixed inset-0 bg-black/80"></div>
+    <div id="role-sheet" class="fixed inset-x-0 bottom-0 bg-[#1c1c1e] rounded-t-[24px] p-6 pb-12">
+        <h3 class="text-xl font-bold mb-4">Выберите профиль</h3>
+        <div id="roles-list-container" class="space-y-3 mb-6 max-h-[40vh] overflow-y-auto"></div>
+        <button onclick="confirmApply()" id="final-apply-btn" class="w-full h-14 bg-primary rounded-xl font-bold">Подтвердить отклик</button>
     </div>
 
     <script src="app.js"></script>
