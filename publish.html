@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Post Vacancy - Telegram Mini App</title>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Config -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#0d7ff2",
+              "background-light": "#f2f2f7", /* iOS grouped background light */
+              "background-dark": "#000000", /* iOS pure black/dark mode */
+              "surface-light": "#ffffff",
+              "surface-dark": "#1c1c1e", /* iOS secondary system background */
+              "input-bg-dark": "#2c2c2e",
+              "border-dark": "#3a3a3c",
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"]
+            },
+            borderRadius: {
+              "DEFAULT": "0.5rem", 
+              "lg": "0.75rem", 
+              "xl": "1rem", 
+              "full": "9999px"
+            },
+          },
+        },
+      }
+    </script>
+<style>
+        /* Custom scrollbar hiding for cleaner mobile look */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Custom radio styling adjustments */
+        input[type="radio"]:checked + div {
+            background-color: #0d7ff2;
+            color: white;
+            border-color: #0d7ff2;
+        }
+        input[type="radio"]:checked + div .icon-unchecked {
+            display: none;
+        }
+        input[type="radio"]:checked + div .icon-checked {
+            display: block;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white antialiased transition-colors duration-200">
+<!-- Main Container -->
+<div class="relative flex flex-col h-screen overflow-hidden">
+<!-- Header / Navigation Bar -->
+<header class="flex-none bg-surface-light dark:bg-surface-dark border-b border-slate-200 dark:border-border-dark px-4 py-3 z-20">
+<div class="flex items-center justify-between">
+<button class="flex items-center justify-center w-10 h-10 -ml-2 text-primary active:opacity-70 rounded-full transition-colors hover:bg-slate-100 dark:hover:bg-white/10">
+<span class="material-symbols-outlined text-[28px]">close</span>
+</button>
+<h1 class="text-[17px] font-semibold text-center flex-1 pr-8 truncate">Разместить Вакансию</h1>
+<div class="w-2"></div> <!-- Spacer to balance layout -->
+</div>
+</header>
+<!-- Scrollable Content -->
+<main class="flex-1 overflow-y-auto no-scrollbar pb-32">
+<!-- Section 1: Basic Info -->
+<div class="px-4 pt-6 pb-2 space-y-5">
+<!-- Job Title -->
+<div class="space-y-2">
+<label class="block text-[13px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium ml-1">
+                        Основная информация
+                    </label>
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl overflow-hidden shadow-sm dark:shadow-none border border-slate-200 dark:border-none">
+<div class="relative border-b border-slate-200 dark:border-border-dark last:border-0">
+<input class="w-full bg-transparent border-none focus:ring-0 text-base py-4 px-4 placeholder-slate-400 dark:placeholder-slate-500 h-14" placeholder="Название вакансии (напр. UI/UX Designer)" type="text"/>
+</div>
+<div class="relative">
+<input class="w-full bg-transparent border-none focus:ring-0 text-base py-4 px-4 placeholder-slate-400 dark:placeholder-slate-500 h-14" placeholder="Город (напр. Москва)" type="text"/>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xl">location_on</span>
+</div>
+</div>
+</div>
+<!-- Level Selector (Segmented Control) -->
+<div class="space-y-2">
+<label class="block text-[13px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium ml-1">
+                        Уровень
+                    </label>
+<div class="bg-slate-200 dark:bg-[#2c2c2e] p-1 rounded-lg flex text-sm font-medium">
+<!-- Junior -->
+<label class="flex-1 relative cursor-pointer group">
+<input class="peer sr-only" name="level" type="radio" value="junior"/>
+<div class="py-1.5 text-center rounded-[6px] text-slate-600 dark:text-slate-300 peer-checked:bg-white dark:peer-checked:bg-[#636366] peer-checked:text-black dark:peer-checked:text-white peer-checked:shadow-sm transition-all duration-200">
+                                Junior
+                            </div>
+</label>
+<!-- Middle -->
+<label class="flex-1 relative cursor-pointer group">
+<input checked="" class="peer sr-only" name="level" type="radio" value="middle"/>
+<div class="py-1.5 text-center rounded-[6px] text-slate-600 dark:text-slate-300 peer-checked:bg-white dark:peer-checked:bg-[#636366] peer-checked:text-black dark:peer-checked:text-white peer-checked:shadow-sm transition-all duration-200">
+                                Middle
+                            </div>
+</label>
+<!-- Senior -->
+<label class="flex-1 relative cursor-pointer group">
+<input class="peer sr-only" name="level" type="radio" value="senior"/>
+<div class="py-1.5 text-center rounded-[6px] text-slate-600 dark:text-slate-300 peer-checked:bg-white dark:peer-checked:bg-[#636366] peer-checked:text-black dark:peer-checked:text-white peer-checked:shadow-sm transition-all duration-200">
+                                Senior
+                            </div>
+</label>
+<!-- Lead -->
+<label class="flex-1 relative cursor-pointer group">
+<input class="peer sr-only" name="level" type="radio" value="lead"/>
+<div class="py-1.5 text-center rounded-[6px] text-slate-600 dark:text-slate-300 peer-checked:bg-white dark:peer-checked:bg-[#636366] peer-checked:text-black dark:peer-checked:text-white peer-checked:shadow-sm transition-all duration-200">
+                                Lead
+                            </div>
+</label>
+</div>
+</div>
+<!-- Work Format -->
+<div class="space-y-2">
+<label class="block text-[13px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium ml-1">
+                        Формат работы
+                    </label>
+<div class="grid grid-cols-3 gap-3">
+<label class="cursor-pointer group">
+<input checked="" class="sr-only" name="format" type="radio" value="remote"/>
+<div class="flex flex-col items-center justify-center p-3 rounded-xl bg-surface-light dark:bg-surface-dark border border-slate-200 dark:border-none h-24 transition-all duration-200 ring-2 ring-transparent">
+<span class="material-symbols-outlined text-3xl mb-1 icon-unchecked text-slate-400">wifi</span>
+<span class="material-symbols-outlined text-3xl mb-1 icon-checked hidden">wifi</span>
+<span class="text-xs font-medium">Удаленно</span>
+</div>
+</label>
+<label class="cursor-pointer group">
+<input class="sr-only" name="format" type="radio" value="hybrid"/>
+<div class="flex flex-col items-center justify-center p-3 rounded-xl bg-surface-light dark:bg-surface-dark border border-slate-200 dark:border-none h-24 transition-all duration-200 ring-2 ring-transparent">
+<span class="material-symbols-outlined text-3xl mb-1 icon-unchecked text-slate-400">home_work</span>
+<span class="material-symbols-outlined text-3xl mb-1 icon-checked hidden">home_work</span>
+<span class="text-xs font-medium">Гибрид</span>
+</div>
+</label>
+<label class="cursor-pointer group">
+<input class="sr-only" name="format" type="radio" value="office"/>
+<div class="flex flex-col items-center justify-center p-3 rounded-xl bg-surface-light dark:bg-surface-dark border border-slate-200 dark:border-none h-24 transition-all duration-200 ring-2 ring-transparent">
+<span class="material-symbols-outlined text-3xl mb-1 icon-unchecked text-slate-400">business</span>
+<span class="material-symbols-outlined text-3xl mb-1 icon-checked hidden">business</span>
+<span class="text-xs font-medium">Офис</span>
+</div>
+</label>
+</div>
+</div>
+<!-- Salary -->
+<div class="space-y-2">
+<label class="block text-[13px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium ml-1">
+                        Зарплата (в месяц)
+                    </label>
+<div class="flex gap-3">
+<div class="flex-1 relative">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="text-slate-400 dark:text-slate-500 text-sm">От</span>
+</div>
+<input class="w-full bg-surface-light dark:bg-surface-dark border-none focus:ring-2 focus:ring-primary rounded-xl text-base py-3 pl-9 pr-3 placeholder-slate-400 dark:placeholder-slate-500 shadow-sm dark:shadow-none h-12" placeholder="0" type="number"/>
+</div>
+<div class="flex-1 relative">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="text-slate-400 dark:text-slate-500 text-sm">До</span>
+</div>
+<input class="w-full bg-surface-light dark:bg-surface-dark border-none focus:ring-2 focus:ring-primary rounded-xl text-base py-3 pl-9 pr-3 placeholder-slate-400 dark:placeholder-slate-500 shadow-sm dark:shadow-none h-12" placeholder="0" type="number"/>
+</div>
+<div class="w-20 relative">
+<select class="w-full bg-surface-light dark:bg-surface-dark border-none focus:ring-2 focus:ring-primary rounded-xl text-base py-3 px-3 shadow-sm dark:shadow-none appearance-none h-12 text-center font-medium">
+<option>₽</option>
+<option>$</option>
+<option>€</option>
+</select>
+</div>
+</div>
+</div>
+<!-- Tech Stack -->
+<div class="space-y-2">
+<label class="block text-[13px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium ml-1">
+                        Стек технологий
+                    </label>
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl p-3 shadow-sm dark:shadow-none border border-slate-200 dark:border-none min-h-[56px] flex flex-wrap gap-2 items-center">
+<!-- Chips -->
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-sm font-medium bg-primary/15 text-primary">
+                            React
+                            <button class="hover:text-primary/70 transition-colors">
+<span class="material-symbols-outlined text-[16px] leading-none">close</span>
+</button>
+</span>
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-sm font-medium bg-primary/15 text-primary">
+                            TypeScript
+                            <button class="hover:text-primary/70 transition-colors">
+<span class="material-symbols-outlined text-[16px] leading-none">close</span>
+</button>
+</span>
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-sm font-medium bg-primary/15 text-primary">
+                            Tailwind
+                            <button class="hover:text-primary/70 transition-colors">
+<span class="material-symbols-outlined text-[16px] leading-none">close</span>
+</button>
+</span>
+<!-- Input for new tag -->
+<input class="flex-1 min-w-[100px] bg-transparent border-none focus:ring-0 text-base p-1 placeholder-slate-400 dark:placeholder-slate-500" placeholder="Добавить..." type="text"/>
+</div>
+</div>
+<!-- Description -->
+<div class="space-y-2">
+<label class="block text-[13px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium ml-1">
+                        Описание вакансии
+                    </label>
+<textarea class="w-full bg-surface-light dark:bg-surface-dark border-none focus:ring-0 rounded-xl text-base p-4 placeholder-slate-400 dark:placeholder-slate-500 shadow-sm dark:shadow-none min-h-[160px] resize-none border border-slate-200 dark:border-none" placeholder="Опишите требования, обязанности и условия..."></textarea>
+</div>
+<!-- Extra space for scrolling past sticky footer -->
+<div class="h-10"></div>
+</div>
+</main>
+<!-- Sticky Footer -->
+<footer class="absolute bottom-0 left-0 right-0 bg-surface-light/90 dark:bg-surface-dark/90 backdrop-blur-md border-t border-slate-200 dark:border-border-dark p-4 z-30 pb-8">
+<button class="w-full bg-primary hover:bg-blue-600 active:scale-[0.98] transition-all text-white font-semibold h-12 rounded-xl text-[17px] flex items-center justify-center shadow-lg shadow-blue-500/20">
+                Опубликовать Вакансию
+            </button>
+</footer>
+</div>
+<!-- Optional: Helper to visualize safe areas in browser if needed, typically handled by OS -->
+</body></html>

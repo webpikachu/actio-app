@@ -7,12 +7,12 @@ let userRole = 'candidate';
 let selectedVacancy = null;
 let currentSkills = [];
 
-// --- ИНИЦИАЛИЗАЦИЯ ---
 async function init() {
     tg.expand();
     tg.ready();
     const userId = tg.initDataUnsafe?.user?.id || 1205293207; 
     
+    // Проверяем профиль пользователя
     const { data: profile } = await client.from('profiles').select('role').eq('user_id', userId).single();
     if (profile) userRole = profile.role;
     
@@ -29,64 +29,87 @@ function renderHeader() {
     }
 }
 
-// --- ФУНКЦИИ КОНСТРУКТОРА РОЛЕЙ ---
-function addSkill() {
-    console.log("ACTIO: Нажата кнопка добавить навык");
-    const input = document.getElementById('skill-input');
-    const val = input.value.trim();
-    if (val && !currentSkills.includes(val)) {
-        currentSkills.push(val);
-        input.value = '';
-        renderSkills();
-    }
-}
+// --- ПУБЛИКАЦИЯ ВАКАНСИИ (HR) ---
+async function publishVacancy() {
+    const btn = document.getElementById('publish-btn');
+    const title = document.getElementById('v-title').value.trim();
+    const city = document.getElementById('v-city').value.trim();
+    const salary = document.getElementById('v-salary-min').value;
+    const desc = document.getElementById('v-desc').value.trim();
 
-function removeSkill(index) {
-    currentSkills.splice(index, 1);
-    renderSkills();
-}
-
-function renderSkills() {
-    const container = document.getElementById('skills-container');
-    container.innerHTML = currentSkills.map((s, i) => `
-        <div class="flex items-center h-8 px-3 rounded-lg bg-primary/10 border border-primary/20">
-            <span class="text-sm mr-1 font-medium">${s}</span>
-            <span onclick="removeSkill(${i})" class="material-symbols-outlined text-[16px] cursor-pointer">close</span>
-        </div>
-    `).join('');
-}
-
-async function saveRole() {
-    console.log("ACTIO: Нажата кнопка Сохранить Роль");
-    const btn = document.getElementById('save-role-btn');
-    const name = document.getElementById('role-name').value.trim();
-    const exp = document.getElementById('experience').value.trim();
-
-    if (!name) return tg.showAlert("Введите название роли!");
+    if (!title) return tg.showAlert("Введите название!");
 
     btn.disabled = true;
-    btn.innerText = "Сохранение...";
-
     const userId = tg.initDataUnsafe?.user?.id || 1205293207;
 
-    const { error } = await client.from('user_roles').insert([{
-        user_id: userId,
-        role_name: name,
-        skills: currentSkills,
-        experience: exp
+    const { error } = await client.from('vacancies').insert([{
+        hr_id: userId,
+        title: title,
+        city: city,
+        salary_min: parseInt(salary),
+        description: desc
     }]);
 
     if (!error) {
-        tg.showAlert("Успешно сохранено!");
+        tg.showAlert("Вакансия опубликована!");
         showPage('page-market');
+        loadMarket();
     } else {
         tg.showAlert("Ошибка: " + error.message);
     }
     btn.disabled = false;
-    btn.innerText = "Сохранить Роль";
 }
 
-// --- ЛОГИКА МАРКЕТА ---
+// --- ОТКЛИК НА ВАКАНСИЮ (КАНДИДАТ) ---
+async function openRoleSheet() {
+    const container = document.getElementById('roles-list-container');
+    container.innerHTML = "<p class='text-center opacity-50'>Загрузка ролей...</p>";
+    
+    document.getElementById('overlay').classList.remove('hidden');
+    document.getElementById('role-sheet').classList.add('active');
+
+    const userId = tg.initDataUnsafe?.user?.id || 1205293207;
+    const { data: roles } = await client.from('user_roles').select('*').eq('user_id', userId);
+
+    if (roles && roles.length > 0) {
+        container.innerHTML = roles.map(r => `
+            <label class="block relative cursor-pointer">
+                <input type="radio" name="selected-role" value="${r.role_name}" class="peer hidden">
+                <div class="p-4 bg-surface-dark border border-border-dark rounded-xl peer-checked:border-primary peer-checked:bg-primary/10">
+                    <div class="font-bold">${r.role_name}</div>
+                    <div class="text-xs opacity-50">${r.skills.join(', ')}</div>
+                </div>
+            </label>
+        `).join('');
+    } else {
+        container.innerHTML = "<p class='text-center text-red-400 p-4'>Сначала создайте роль в профиле!</p>";
+    }
+}
+
+async function confirmApply() {
+    const selectedRadio = document.querySelector('input[name="selected-role"]:checked');
+    if (!selectedRadio) return tg.showAlert("Выберите роль для отклика!");
+
+    const candidateName = tg.initDataUnsafe?.user?.first_name || "Аноним";
+    const userId = tg.initDataUnsafe?.user?.id || 1205293207;
+
+    const { error } = await client.from('applications').insert([{
+        candidate_name: candidateName,
+        role: selectedRadio.value,
+        hr_id: selectedVacancy.hr_id,
+        status: 'pending'
+    }]);
+
+    if (!error) {
+        tg.showAlert("Отклик отправлен! HR получил уведомление.");
+        closeRoleSheet();
+        showPage('page-market');
+    } else {
+        tg.showAlert("Ошибка: " + error.message);
+    }
+}
+
+// --- ОСТАЛЬНЫЕ ФУНКЦИИ ---
 async function loadMarket() {
     const list = document.getElementById('vacancies-list');
     list.innerHTML = `<p class='text-center py-10 opacity-50 italic'>Загрузка...</p>`;
@@ -124,14 +147,54 @@ function showPage(id) {
     if (id === 'page-profile') renderSkills();
 }
 
-function openRoleSheet() {
-    document.getElementById('overlay').classList.remove('hidden');
-    document.getElementById('role-sheet').classList.add('active');
-}
-
 function closeRoleSheet() {
     document.getElementById('overlay').classList.add('hidden');
     document.getElementById('role-sheet').classList.remove('active');
+}
+
+function addSkill() {
+    const input = document.getElementById('skill-input');
+    const val = input.value.trim();
+    if (val && !currentSkills.includes(val)) {
+        currentSkills.push(val);
+        input.value = '';
+        renderSkills();
+    }
+}
+
+function removeSkill(index) {
+    currentSkills.splice(index, 1);
+    renderSkills();
+}
+
+function renderSkills() {
+    const container = document.getElementById('skills-container');
+    if (!container) return;
+    container.innerHTML = currentSkills.map((s, i) => `
+        <div class="flex items-center h-8 px-3 rounded-lg bg-primary/10 border border-primary/20">
+            <span class="text-sm mr-1 font-medium">${s}</span>
+            <span onclick="removeSkill(${i})" class="material-symbols-outlined text-[16px] cursor-pointer">close</span>
+        </div>
+    `).join('');
+}
+
+async function saveRole() {
+    const name = document.getElementById('role-name').value.trim();
+    const exp = document.getElementById('experience').value.trim();
+    if (!name) return tg.showAlert("Введите название роли!");
+    const userId = tg.initDataUnsafe?.user?.id || 1205293207;
+
+    const { error } = await client.from('user_roles').insert([{
+        user_id: userId,
+        role_name: name,
+        skills: currentSkills,
+        experience: exp
+    }]);
+
+    if (!error) {
+        tg.showAlert("Роль создана!");
+        showPage('page-market');
+    }
 }
 
 init();

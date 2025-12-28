@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Role Selection - Telegram Mini App</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0d7ff2",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101922",
+                        "surface-dark": "#1c2630",
+                        "border-dark": "#2a3b4d",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-gray-900 font-display antialiased overflow-hidden h-screen w-full relative">
+<!-- App Context Background (Simulating the screen behind the popup) -->
+<div class="absolute inset-0 z-0 flex flex-col w-full h-full opacity-40 pointer-events-none filter blur-sm">
+<!-- Header Mockup -->
+<div class="h-14 w-full bg-[#101922] flex items-center px-4 border-b border-white/10">
+<div class="w-6 h-6 rounded-full bg-gray-600"></div>
+<div class="ml-4 w-32 h-4 rounded bg-gray-600"></div>
+</div>
+<!-- Map/Content Mockup -->
+<div class="flex-1 w-full bg-[#0f1720] relative">
+<div class="absolute top-10 left-10 w-full h-full bg-gradient-to-br from-blue-900/20 to-transparent"></div>
+<!-- Abstract Map shapes -->
+<div class="absolute top-1/4 left-1/4 w-32 h-32 rounded-full bg-primary/10"></div>
+<div class="absolute bottom-1/3 right-10 w-24 h-24 rounded-full bg-purple-500/10"></div>
+</div>
+</div>
+<!-- Overlay / Dimmer -->
+<div class="absolute inset-0 z-10 bg-black/60 backdrop-blur-[2px] transition-opacity"></div>
+<!-- Bottom Sheet Container -->
+<div class="absolute inset-x-0 bottom-0 z-20 flex flex-col items-center justify-end h-auto max-h-[90vh]">
+<!-- Sheet Content -->
+<div class="w-full max-w-md bg-background-light dark:bg-background-dark rounded-t-[20px] shadow-[0_-8px_30px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col relative animate-slide-up">
+<!-- Handle -->
+<div class="w-full flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing bg-background-light dark:bg-background-dark z-30" data-alt="Drag handle">
+<div class="h-1.5 w-10 rounded-full bg-gray-300 dark:bg-[#314d68]"></div>
+</div>
+<!-- Header Section -->
+<div class="px-5 pt-2 pb-4 flex items-center justify-between bg-background-light dark:bg-background-dark">
+<h3 class="text-gray-900 dark:text-white text-xl font-bold leading-tight tracking-tight">Выберите роль</h3>
+<button class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 transition-colors">
+<span class="material-symbols-outlined text-[24px]">close</span>
+</button>
+</div>
+<!-- Scrollable Content -->
+<div class="flex-1 overflow-y-auto px-5 pb-4">
+<p class="text-sm text-gray-500 dark:text-gray-400 mb-4 font-medium">Выберите профиль, который хотите использовать для этого отклика.</p>
+<div class="flex flex-col gap-3">
+<!-- Option 1: Selected -->
+<label class="group relative flex items-center justify-between p-4 rounded-xl border-2 border-primary bg-primary/5 cursor-pointer transition-all shadow-sm">
+<div class="flex flex-col">
+<span class="text-gray-900 dark:text-white font-semibold text-base">Senior Python Developer</span>
+<span class="text-primary dark:text-blue-400 text-sm font-medium mt-0.5">Middle level</span>
+</div>
+<div class="relative flex items-center justify-center">
+<input checked="" class="peer sr-only" name="role_selection" type="radio"/>
+<div class="w-6 h-6 rounded-full border-2 border-primary bg-primary flex items-center justify-center transition-all peer-checked:scale-100">
+<span class="material-symbols-outlined text-white text-[16px] font-bold">check</span>
+</div>
+</div>
+</label>
+<!-- Option 2 -->
+<label class="group relative flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-border-dark bg-white dark:bg-surface-dark hover:border-primary/50 dark:hover:border-primary/50 cursor-pointer transition-all">
+<div class="flex flex-col">
+<span class="text-gray-900 dark:text-gray-200 font-semibold text-base group-hover:text-primary transition-colors">Team Lead</span>
+<span class="text-gray-500 dark:text-gray-400 text-sm font-normal mt-0.5">CV attached</span>
+</div>
+<div class="relative flex items-center justify-center">
+<input class="peer sr-only" name="role_selection" type="radio"/>
+<div class="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-500 bg-transparent flex items-center justify-center transition-all peer-checked:bg-primary peer-checked:border-primary">
+<!-- Checkmark hidden by default, shown via CSS logic if needed, but handled by replacing the div in Option 1 style for clarity -->
+</div>
+<!-- Active indicator logic duplication for CSS-only switching visual -->
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 peer-checked:opacity-100">
+<div class="w-6 h-6 rounded-full bg-primary border-2 border-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-[16px]">check</span>
+</div>
+</div>
+</div>
+</label>
+<!-- Option 3 -->
+<label class="group relative flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-border-dark bg-white dark:bg-surface-dark hover:border-primary/50 dark:hover:border-primary/50 cursor-pointer transition-all">
+<div class="flex flex-col">
+<span class="text-gray-900 dark:text-gray-200 font-semibold text-base group-hover:text-primary transition-colors">Project Manager</span>
+<span class="text-gray-500 dark:text-gray-400 text-sm font-normal mt-0.5">Entry level</span>
+</div>
+<div class="relative flex items-center justify-center">
+<input class="peer sr-only" name="role_selection" type="radio"/>
+<div class="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-500 bg-transparent flex items-center justify-center transition-all peer-checked:bg-primary peer-checked:border-primary"></div>
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 peer-checked:opacity-100">
+<div class="w-6 h-6 rounded-full bg-primary border-2 border-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-[16px]">check</span>
+</div>
+</div>
+</div>
+</label>
+</div>
+<!-- Create New Link (Optional Empty State Consideration) -->
+<button class="mt-4 w-full flex items-center justify-start gap-2 py-2 px-1 text-primary hover:text-blue-400 transition-colors">
+<span class="material-symbols-outlined text-[20px]">add_circle</span>
+<span class="text-sm font-semibold">Добавить новую роль</span>
+</button>
+</div>
+<!-- Footer Action -->
+<div class="p-5 pt-2 bg-background-light dark:bg-background-dark pb-8 md:pb-5 sticky bottom-0 z-20 border-t border-transparent dark:border-white/5">
+<button class="group flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-5 bg-primary hover:bg-blue-600 active:scale-[0.98] transition-all text-white text-base font-bold leading-normal tracking-[0.015em] shadow-lg shadow-blue-500/20">
+<span class="truncate">Подтвердить отклик</span>
+</button>
+</div>
+<!-- Safe Area Spacer for iOS Home Indicator -->
+<div class="h-1 bg-background-light dark:bg-background-dark"></div>
+</div>
+</div>
+<!-- Animation Styles -->
+<style>
+        @keyframes slide-up {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-up {
+            animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</body></html>
