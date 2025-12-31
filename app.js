@@ -12,35 +12,31 @@ let vacancyTechStack = []; // Для создания вакансии HR
 const userId = tg.initDataUnsafe?.user?.id || 1205293207;
 
 async function init() {
-    console.log("🚀 Инициализация Actio для ID:", userId);
     tg.expand();
     tg.ready();
     
-    try {
-        // Проверяем роль в базе
-        const { data: profile, error } = await client
-            .from('profiles')
-            .select('role')
-            .eq('user_id', userId)
-            .single();
-        
-        if (error) {
-            console.warn("⚠️ Профиль не найден или ошибка:", error.message);
-        }
+    const { data: profile } = await client.from('profiles').select('role').eq('user_id', userId).single();
+    
+    if (profile) {
+        userRole = profile.role;
+    }
 
-        if (profile) {
-            userRole = profile.role;
-            console.log("✅ Роль из базы подтверждена:", userRole);
-        }
+    updateUIByRole();
+    showPage('page-market');
+}
 
-        // Обновляем видимость элементов интерфейса в зависимости от роли
-        updateUIByRole();
-        
-        // Загружаем стартовую страницу
-        showPage('page-market');
+function updateUIByRole() {
+    const navHrBtn = document.getElementById('nav-hr-btn'); // Кнопка "Сигналы" в меню
+    const profileTab = document.querySelector('[onclick="showPage(\'page-profile\')"]'); // Вкладка Профиль
 
-    } catch (e) {
-        console.error("❌ Критическая ошибка инициализации:", e);
+    if (userRole === 'hr') {
+        if (navHrBtn) navHrBtn.classList.remove('hidden');
+        // Если ты HR, тебе не нужно создавать карточки соискателя
+        // Мы можем скрыть кнопку "Добавить роль" на странице профиля
+        const addBtn = document.querySelector('button[onclick*="page-role-create"]');
+        if (addBtn) addBtn.style.display = 'none';
+    } else {
+        if (navHrBtn) navHrBtn.classList.add('hidden');
     }
 }
 
@@ -106,23 +102,31 @@ function removeTechTag(index) {
 }
 
 async function publishVacancy() {
-    console.log("📡 Попытка публикации вакансии...");
-    
-    // Проверка роли перед отправкой (защита)
-    if (userRole !== 'hr') {
-        return tg.showAlert("Ошибка: Только рекрутеры могут создавать вакансии!");
-    }
-
     const title = document.getElementById('v-title').value.trim();
     const city = document.getElementById('v-city').value.trim();
     const level = document.getElementById('v-level').value;
     const sMin = document.getElementById('v-salary-min').value;
     const sMax = document.getElementById('v-salary-max').value;
     const desc = document.getElementById('v-desc').value.trim();
+    const stackInput = document.getElementById('v-stack-input').value.trim();
+
+    // 1. ПРОВЕРКА РОЛИ (Самое важное!)
+    if (userRole !== 'hr') {
+        console.error("Ошибка прав: Текущая роль -", userRole);
+        return tg.showAlert("Ошибка доступа: В базе вы не числитесь как HR. Нажмите /start в боте и выберите 'Рекрутер'");
+    }
 
     if (!title) return tg.showAlert("Введите название позиции!");
-    if (vacancyTechStack.length === 0) return tg.showAlert("Укажите хотя бы один навык в стеке!");
 
+    // 2. АВТО-СТЕК: если массив пуст, берем текст из инпута
+    let finalStack = vacancyTechStack;
+    if (finalStack.length === 0 && stackInput) {
+        finalStack = stackInput.split(',').map(s => s.trim());
+    }
+    
+    if (finalStack.length === 0) return tg.showAlert("Укажите стек технологий!");
+
+    // 3. ОТПРАВКА (Используем client!)
     const { data, error } = await client.from('vacancies').insert([{
         hr_id: userId,
         title: title,
@@ -130,24 +134,18 @@ async function publishVacancy() {
         level: level,
         salary_min: parseInt(sMin) || 0,
         salary_max: parseInt(sMax) || 0,
-        tech_stack: vacancyTechStack,
+        tech_stack: finalStack,
         description: desc,
         currency: '₽'
-    }]);
+    }]).select();
 
     if (error) {
-        console.error("❌ Ошибка Supabase при вставке:", error);
-        tg.showAlert("Ошибка базы данных: " + error.message);
+        console.error("Supabase Error:", error);
+        tg.showAlert("Ошибка базы: " + error.message);
     } else {
-        console.log("✅ Вакансия создана!");
         tg.HapticFeedback.notificationOccurred('success');
-        tg.showAlert("Сигнал успешно отправлен в маркет!");
-        
-        // Очистка
+        tg.showAlert("🚀 Сигнал опубликован!");
         vacancyTechStack = [];
-        document.getElementById('v-title').value = '';
-        document.getElementById('v-desc').value = '';
-        renderTechTags();
         showPage('page-market');
     }
 }
