@@ -13,13 +13,30 @@ async function init() {
     tg.expand();
     tg.ready();
     
-    const { data: profile } = await client.from('profiles').select('role').eq('user_id', userId).single();
+    // 1. Получаем профиль пользователя
+    const { data: profile, error } = await client.from('profiles').select('role').eq('user_id', userId).single();
+    
     if (profile) {
         userRole = profile.role;
-        if (userRole === 'hr') document.getElementById('nav-hr-btn').classList.remove('hidden');
+        console.log("Ваша роль:", userRole);
+
+        // Управление видимостью кнопок навигации
+        const navHrBtn = document.getElementById('nav-hr-btn');
+        const createRoleBtn = document.querySelector('[onclick="showPage(\'page-role-create\')"]');
+
+        if (userRole === 'hr') {
+            navHrBtn.classList.remove('hidden'); // Показываем HR панель
+            if (createRoleBtn) createRoleBtn.classList.add('hidden'); // ПРЯЧЕМ кнопку "Создать роль" для HR
+        } else {
+            navHrBtn.classList.add('hidden'); // Прячем HR панель от кандидата
+            if (createRoleBtn) createRoleBtn.classList.remove('hidden'); // Показываем создание ролей кандидату
+        }
+    } else {
+        // Если профиля нет (первый вход), по умолчанию считаем кандидатом
+        tg.showAlert("Профиль не найден. Пожалуйста, выберите роль в боте через /start");
     }
     
-    loadMarket();
+    showPage('page-market');
 }
 
 // --- УЛУЧШЕННАЯ НАВИГАЦИЯ ---
@@ -227,14 +244,26 @@ async function confirmApply() {
 // --- ВСПОМОГАТЕЛЬНЫЕ ---
 async function loadUserRoles() {
     const container = document.getElementById('user-roles-list');
-    const { data } = await client.from('user_roles').select('*').eq('user_id', userId);
-    if (data) {
+    if (!container) return;
+    
+    // ВАЖНО: Фильтруем строго по userId текущего пользователя
+    const { data, error } = await client
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', userId) 
+        .order('created_at', { ascending: false });
+    
+    if (error) return console.error("Ошибка загрузки ролей:", error);
+
+    if (data && data.length > 0) {
         container.innerHTML = data.map(r => `
-            <div class="p-5 bg-surface-dark border border-border-dark rounded-2xl shadow-lg">
+            <div class="p-5 bg-surface-dark border border-border-dark rounded-2xl shadow-lg mb-3">
                 <div class="font-black italic uppercase tracking-tighter text-sm mb-1">${r.role_name}</div>
                 <div class="text-[9px] opacity-40 font-bold uppercase tracking-widest">${(r.skills || []).join(', ')}</div>
             </div>
         `).join('');
+    } else {
+        container.innerHTML = `<p class="text-xs opacity-30 text-center py-4 uppercase font-black tracking-widest">У вас пока нет ролей</p>`;
     }
 }
 

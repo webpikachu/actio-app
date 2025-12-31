@@ -130,48 +130,91 @@
         </main>
     </section>
 
-    <section id="page-hr" class="page">
-        <header class="p-4 border-b border-border-dark text-center bg-surface-dark/50">
-            <h1 class="text-xl font-black italic uppercase tracking-widest">Signal Center</h1>
+    <section id="page-hr" class="page bg-background-dark">
+        <header class="p-4 border-b border-border-dark/50 flex justify-between items-center bg-surface-dark/30 backdrop-blur-md sticky top-0 z-10">
+            <div class="w-10"></div> <h1 class="text-xl font-black italic uppercase tracking-[0.2em] text-white">Signal Center</h1>
+            <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary border border-primary/20">
+                <span class="material-symbols-outlined text-[20px]">sensors</span>
+            </div>
         </header>
-        <main class="flex-1 overflow-y-auto p-4 space-y-6 no-scrollbar pb-32">
-            <div class="p-6 bg-surface-dark rounded-[32px] border border-border-dark shadow-2xl">
-                <h2 class="text-xs font-black text-primary uppercase mb-5 tracking-widest text-center">Опубликовать вакансию</h2>
-                <div class="space-y-4">
-                    <input id="v-title" type="text" placeholder="Название (напр. UI Designer)" class="w-full h-12 bg-transparent border-b border-border-dark outline-none focus:border-primary placeholder-gray-600">
-                    <div class="grid grid-cols-2 gap-4">
-                        <input id="v-city" type="text" placeholder="Город" class="h-10 bg-transparent border-b border-border-dark outline-none placeholder-gray-600 text-sm">
-                        <select id="v-level" class="bg-transparent border-b border-border-dark outline-none text-gray-400 text-sm">
-                            <option value="Junior">Junior</option>
-                            <option value="Middle" selected>Middle</option>
-                            <option value="Senior">Senior</option>
-                            <option value="Lead">Lead</option>
-                        </select>
+
+        <main class="flex-1 overflow-y-auto p-5 space-y-6 no-scrollbar pb-32">
+            <div class="p-6 bg-surface-dark rounded-[32px] border border-border-dark shadow-[0_20px_50px_rgba(0,0,0,0.3)] relative overflow-hidden">
+                <div class="absolute -top-24 -right-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl"></div>
+                
+                <h2 class="text-[10px] font-black text-primary uppercase mb-6 tracking-[0.3em] flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></span>
+                    Новый импульс в маркет
+                </h2>
+
+                <div class="space-y-5">
+                    <div class="relative">
+                        <input id="v-title" type="text" placeholder="Позиция (напр. Product Designer)" 
+                               class="w-full bg-background-dark/50 border border-border-dark rounded-2xl p-4 pt-6 pb-2 outline-none focus:border-primary transition-all text-white font-bold placeholder-gray-600 peer">
+                        <label class="absolute left-4 top-2 text-[8px] font-black text-gray-500 uppercase tracking-widest transition-all peer-placeholder-shown:opacity-0">Название вакансии</label>
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <input id="v-salary-min" type="number" placeholder="ЗП От" class="h-10 bg-transparent border-b border-border-dark outline-none placeholder-gray-600 text-sm">
-                        <input id="v-salary-max" type="number" placeholder="ЗП До" class="h-10 bg-transparent border-b border-border-dark outline-none placeholder-gray-600 text-sm">
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-background-dark/50 border border-border-dark rounded-2xl px-4 py-2">
+                            <label class="block text-[8px] font-black text-gray-500 uppercase tracking-widest">Локация</label>
+                            <input id="v-city" type="text" placeholder="Город" class="w-full bg-transparent border-none p-0 outline-none focus:ring-0 text-sm font-bold text-white">
+                        </div>
+                        <div class="bg-background-dark/50 border border-border-dark rounded-2xl px-4 py-2">
+                            <label class="block text-[8px] font-black text-gray-500 uppercase tracking-widest">Уровень</label>
+                            <select id="v-level" class="w-full bg-transparent border-none p-0 outline-none focus:ring-0 text-sm font-bold text-gray-300 appearance-none">
+                                <option value="Junior">Junior</option>
+                                <option value="Middle" selected>Middle</option>
+                                <option value="Senior">Senior</option>
+                                <option value="Lead">Lead</option>
+                            </select>
+                        </div>
                     </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-background-dark/50 border border-border-dark rounded-2xl px-4 py-2">
+                            <label class="block text-[8px] font-black text-gray-500 uppercase tracking-widest">Оплата от</label>
+                            <input id="v-salary-min" type="number" placeholder="0" class="w-full bg-transparent border-none p-0 outline-none focus:ring-0 text-sm font-bold text-white">
+                        </div>
+                        <div class="bg-background-dark/50 border border-border-dark rounded-2xl px-4 py-2">
+                            <label class="block text-[8px] font-black text-gray-500 uppercase tracking-widest">Оплата до</label>
+                            <input id="v-salary-max" type="number" placeholder="Max" class="w-full bg-transparent border-none p-0 outline-none focus:ring-0 text-sm font-bold text-white">
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <label class="text-[9px] font-black text-gray-500 uppercase ml-1 tracking-[0.2em]">Технологический стек</label>
+                        <div class="flex gap-2">
+                            <input id="v-stack-input" type="text" placeholder="Навык (напр. React)" 
+                                   class="flex-1 bg-background-dark/50 border border-border-dark rounded-2xl px-4 h-14 outline-none focus:border-primary text-sm font-bold">
+                            <button onclick="addTechTag()" class="w-14 h-14 bg-primary text-white rounded-2xl shadow-lg shadow-blue-500/20 flex items-center justify-center active:scale-90 transition-all">
+                                <span class="material-symbols-outlined text-2xl">add</span>
+                            </button>
+                        </div>
+                        <div id="v-tech-list" class="flex flex-wrap gap-2 min-h-[20px]">
+                            </div>
+                    </div>
+
                     <div class="space-y-2">
-    <label class="text-[10px] text-gray-500 uppercase font-black ml-1">Стек технологий</label>
-    <div class="flex gap-2">
-        <input id="v-stack-input" type="text" placeholder="Node, React, Postgres..." class="flex-1 h-14 px-4 rounded-2xl border border-border-dark bg-surface-dark outline-none focus:ring-1 focus:ring-primary">
-        <button onclick="addTechTag()" class="w-14 h-14 bg-surface-dark border border-border-dark rounded-2xl text-primary flex items-center justify-center active:scale-90 transition-all">
-            <span class="material-symbols-outlined">add_circle</span>
-        </button>
-    </div>
-    <div id="v-tech-list" class="flex flex-wrap gap-2 mt-2"></div>
-</div>
-                    <textarea id="v-desc" placeholder="Описание и требования..." class="w-full min-h-[100px] bg-transparent border-b border-border-dark outline-none resize-none placeholder-gray-600 text-sm mt-2"></textarea>
-                    <button onclick="publishVacancy()" class="w-full bg-white text-black h-14 rounded-2xl font-black uppercase tracking-tighter active:scale-95 transition-all mt-6">
-                        Отправить сигнал
+                        <label class="text-[9px] font-black text-gray-500 uppercase ml-1 tracking-[0.2em]">Описание сигнала</label>
+                        <textarea id="v-desc" placeholder="Задачи, требования, условия..." 
+                                  class="w-full min-h-[120px] bg-background-dark/50 border border-border-dark rounded-2xl p-4 outline-none focus:border-primary text-sm leading-relaxed text-gray-300 resize-none"></textarea>
+                    </div>
+
+                    <button onclick="publishVacancy()" 
+                            class="w-full bg-white text-black h-16 rounded-[20px] font-black uppercase tracking-[0.1em] text-sm shadow-xl active:scale-95 transition-all mt-4 flex items-center justify-center gap-3">
+                        <span class="material-symbols-outlined">send</span>
+                        Опубликовать сигнал
                     </button>
                 </div>
             </div>
             
-            <div class="mt-8">
-                <h3 class="text-[10px] font-black text-gray-500 uppercase mb-4 ml-2 tracking-widest">Мои вакансии</h3>
-                <div id="hr-vacancies-list" class="space-y-3"></div>
+            <div class="mt-10">
+                <div class="flex items-center justify-between mb-5 px-2">
+                    <h3 class="text-[11px] font-black text-gray-500 uppercase tracking-[0.3em]">Мои активные вакансии</h3>
+                    <span id="vac-count" class="bg-surface-dark border border-border-dark px-3 py-1 rounded-full text-[10px] font-bold text-primary">0</span>
+                </div>
+                <div id="hr-vacancies-list" class="space-y-4">
+                    </div>
             </div>
         </main>
     </section>
