@@ -1,96 +1,52 @@
 <!DOCTYPE html>
-<html class="dark" lang="ru">
+<html lang="ru" class="dark">
 <head>
-    <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
-    <title>Actio - Разместить вакансию</title>
-    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Actio</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        /* Скрытие скроллбара */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        /* Стили радиокнопок */
-        input[type="radio"]:checked + div { @apply bg-blue-600 text-white ring-2 ring-blue-600; }
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .hide { display: none !important; }
     </style>
 </head>
-
 <body class="bg-gray-100 dark:bg-black text-gray-900 dark:text-white h-screen flex flex-col">
 
-    <header class="flex-none px-4 py-3 flex items-center bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <button onclick="window.history.back()" class="mr-4 text-blue-500">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-        </button>
-        <h1 class="text-lg font-bold">Новая вакансия</h1>
+    <header class="p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center sticky top-0 z-10">
+        <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500">ACTIO</h1>
+        <div id="user-status" class="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-800 text-gray-500">
+            Загрузка...
+        </div>
     </header>
 
-    <main class="flex-1 overflow-y-auto no-scrollbar p-4 space-y-6">
-        
-        <div class="space-y-4">
-            <div class="bg-white dark:bg-gray-900 rounded-xl p-3 shadow-sm space-y-3">
-                <input id="v-title" class="w-full bg-transparent border-b border-gray-200 dark:border-gray-800 py-2 focus:outline-none" placeholder="Название (напр. Frontend Dev)" type="text"/>
-                <input id="v-city" class="w-full bg-transparent py-2 focus:outline-none" placeholder="Город (напр. Москва / Remote)" type="text"/>
-            </div>
+    <main id="vacancy-feed" class="flex-1 overflow-y-auto p-4 space-y-3 pb-24">
+        <div class="text-center text-gray-500 mt-10 animate-pulse">Загрузка вакансий...</div>
+    </main>
+
+    <nav class="fixed bottom-0 w-full bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 pb-safe">
+        <div class="flex justify-around items-center h-16">
+            
+            <button onclick="loadVacancies()" class="flex flex-col items-center justify-center w-full h-full text-blue-500">
+                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                <span class="text-[10px] font-medium">Вакансии</span>
+            </button>
+
+            <button id="btn-create" onclick="window.location.href='publish.html'" class="hide flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-500">
+                <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg mb-1">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                </div>
+                <span class="text-[10px] font-medium">Создать</span>
+            </button>
+
+            <button class="flex flex-col items-center justify-center w-full h-full text-gray-400">
+                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                <span class="text-[10px] font-medium">Профиль</span>
+            </button>
         </div>
-
-        <div>
-            <label class="text-xs uppercase text-gray-500 font-semibold ml-1">Уровень</label>
-            <div class="mt-2 flex gap-2 bg-gray-200 dark:bg-gray-800 p-1 rounded-lg">
-                <label class="flex-1 cursor-pointer">
-                    <input class="sr-only" name="level" type="radio" value="Junior"/>
-                    <div class="text-center py-2 rounded-md text-sm transition-all bg-transparent">Jun</div>
-                </label>
-                <label class="flex-1 cursor-pointer">
-                    <input class="sr-only" name="level" type="radio" value="Middle" checked/>
-                    <div class="text-center py-2 rounded-md text-sm transition-all bg-white dark:bg-gray-700 shadow-sm">Mid</div>
-                </label>
-                <label class="flex-1 cursor-pointer">
-                    <input class="sr-only" name="level" type="radio" value="Senior"/>
-                    <div class="text-center py-2 rounded-md text-sm transition-all bg-transparent">Sen</div>
-                </label>
-            </div>
-        </div>
-
-        <div>
-            <label class="text-xs uppercase text-gray-500 font-semibold ml-1">Зарплата</label>
-            <div class="mt-2 flex gap-3">
-                <input id="v-salary-min" type="number" class="flex-1 bg-white dark:bg-gray-900 rounded-xl p-3 focus:outline-none" placeholder="От"/>
-                <input id="v-salary-max" type="number" class="flex-1 bg-white dark:bg-gray-900 rounded-xl p-3 focus:outline-none" placeholder="До"/>
-                <select id="v-currency" class="w-16 bg-white dark:bg-gray-900 rounded-xl p-3 focus:outline-none text-center">
-                    <option value="₽">₽</option>
-                    <option value="$">$</option>
-                    <option value="€">€</option>
-                </select>
-            </div>
-        </div>
-
-        <div>
-            <label class="text-xs uppercase text-gray-500 font-semibold ml-1">Стек технологий</label>
-            <div class="mt-2 bg-white dark:bg-gray-900 rounded-xl p-3 min-h-[60px]">
-                <div id="v-tech-list" class="flex flex-wrap gap-2 mb-2">
-                    </div>
-                <input id="v-tech-input" onkeydown="if(event.key==='Enter') addTechTag()" class="w-full bg-transparent text-sm focus:outline-none" placeholder="Введите навык и нажмите Enter..." type="text"/>
-            </div>
-        </div>
-
-        <div>
-            <label class="text-xs uppercase text-gray-500 font-semibold ml-1">Описание</label>
-            <textarea id="v-desc" class="w-full mt-2 bg-white dark:bg-gray-900 rounded-xl p-3 h-32 focus:outline-none resize-none" placeholder="Подробности о задачах и проекте..."></textarea>
-        </div>
-
-        <div class="h-20"></div> </main>
-
-    <div class="fixed bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-black/80 backdrop-blur-sm border-t border-gray-200 dark:border-gray-800">
-        <button onclick="publishVacancy()" class="w-full bg-blue-600 active:scale-95 transition-transform text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-600/30">
-            Опубликовать
-        </button>
-    </div>
+    </nav>
 
     <script src="app.js"></script>
 </body>

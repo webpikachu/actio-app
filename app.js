@@ -1,134 +1,87 @@
 const tg = window.Telegram.WebApp;
+tg.expand();
 
-// --- НАСТРОЙКИ ---
-// Вставьте сюда ваши реальные данные из настроек Supabase
-const SUPABASE_URL = "https://cgdeaibhadwsxqebohcj.supabase.co"; 
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZGVhaWJoYWR3c3hxZWJvaGNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2NzQ0OTYsImV4cCI6MjA4MjI1MDQ5Nn0._JQQBh9JVswhMoxmthN2U1l-Bvs65-bSSsNdv51sPvQ"; // ⚠️ Вставьте сюда ANON public key
+// --- ВСТАВЬ СВОИ ДАННЫЕ НИЖЕ ---
+const SUPABASE_URL = "https://твоя-ссылка.supabase.co"; 
+const SUPABASE_KEY = "твой-anon-ключ";
+// -------------------------------
 
-// Инициализация
 const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const userId = tg.initDataUnsafe?.user?.id; // Берем ID реального юзера
+const userId = tg.initDataUnsafe?.user?.id; // Telegram ID
 
-// Глобальное состояние
-let currentUserRole = null;
-let vacancyTechStack = [];
+// Элементы UI
+const statusEl = document.getElementById('user-status');
+const createBtn = document.getElementById('btn-create');
+const feedEl = document.getElementById('vacancy-feed');
 
-// --- СТАРТ ПРИЛОЖЕНИЯ ---
 async function init() {
-    tg.expand();
-    
-    // Проверка, запущен ли апп внутри Телеграм
+    // 1. Если открыто не в Telegram
     if (!userId) {
-        alert("Пожалуйста, откройте приложение через Telegram!");
+        statusEl.innerText = "⚠️ Открой в Telegram";
+        statusEl.classList.add('text-red-500');
         return;
     }
 
-    // Загружаем профиль
+    statusEl.innerText = `ID: ${userId} (Проверка...)`;
+
+    // 2. Получаем роль из базы
     const { data: profile, error } = await client
         .from('profiles')
         .select('role')
         .eq('user_id', userId)
         .single();
 
-    if (error || !profile) {
-        alert("Профиль не найден. Перезапустите бота через /start");
+    if (error) {
+        console.error("Ошибка профиля:", error);
+        statusEl.innerText = `Ошибка: ${error.message}`;
+        // Для ТЕСТА: Если профиля нет, покажем кнопку все равно (чтобы ты увидел её)
+        // createBtn.classList.remove('hide'); 
         return;
     }
 
-    currentUserRole = profile.role;
-    console.log("Роль пользователя:", currentUserRole);
-
-    // Настраиваем интерфейс (скрываем лишнее)
-    if (currentUserRole === 'hr') {
-        // Логика для HR (если нужно что-то скрыть/показать)
+    // 3. Логика отображения
+    if (profile && profile.role === 'hr') {
+        statusEl.innerText = "✅ Роль: Рекрутер";
+        statusEl.classList.add('text-green-500');
+        createBtn.classList.remove('hide'); // ПОКАЗЫВАЕМ КНОПКУ "+"
     } else {
-        // Логика для Кандидата
+        statusEl.innerText = "👤 Роль: Соискатель";
+        createBtn.classList.add('hide');
     }
+
+    // 4. Загружаем вакансии
+    loadVacancies();
 }
 
-// --- ЛОГИКА ПУБЛИКАЦИИ ВАКАНСИИ (HR) ---
-
-// Добавление тега
-function addTechTag() {
-    const input = document.getElementById('v-tech-input');
-    if (!input) return;
+async function loadVacancies() {
+    feedEl.innerHTML = '<div class="text-center text-gray-500 mt-10">Загрузка...</div>';
     
-    const tag = input.value.trim();
-    if (tag && !vacancyTechStack.includes(tag)) {
-        vacancyTechStack.push(tag);
-        renderTechTags();
-        input.value = '';
+    const { data: vacancies, error } = await client
+        .from('vacancies')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error || !vacancies.length) {
+        feedEl.innerHTML = '<div class="text-center text-gray-500 mt-10">Вакансий пока нет</div>';
+        return;
     }
-}
 
-// Удаление тега
-function removeTechTag(index) {
-    vacancyTechStack.splice(index, 1);
-    renderTechTags();
-}
-
-// Отрисовка тегов
-function renderTechTags() {
-    const container = document.getElementById('v-tech-list');
-    if (!container) return;
-
-    container.innerHTML = vacancyTechStack.map((t, i) => `
-        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-            ${t}
-            <button onclick="removeTechTag(${i})" class="ml-1 hover:text-red-500">✕</button>
-        </span>
+    feedEl.innerHTML = vacancies.map(v => `
+        <div class="bg-white dark:bg-gray-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800">
+            <h3 class="font-bold text-lg">${v.title}</h3>
+            <div class="text-sm text-gray-500 flex justify-between mt-1">
+                <span>${v.city || 'Remote'}</span>
+                <span class="text-blue-500 font-semibold">${v.salary_min ? v.salary_min : ''} ${v.currency || ''}</span>
+            </div>
+            <div class="mt-3 flex flex-wrap gap-2">
+                ${(v.tech_stack || []).map(tag => `<span class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-0.5 rounded text-xs">${tag}</span>`).join('')}
+            </div>
+            <button onclick="tg.showAlert('Отклик пока в разработке')" class="mt-4 w-full bg-gray-100 dark:bg-gray-800 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                Откликнуться
+            </button>
+        </div>
     `).join('');
 }
 
-// Отправка формы в базу
-async function publishVacancy() {
-    // 1. Собираем данные
-    const title = document.getElementById('v-title').value.trim();
-    const city = document.getElementById('v-city').value.trim();
-    const desc = document.getElementById('v-desc').value.trim();
-    
-    // Получаем значение радио-кнопки
-    const levelEl = document.querySelector('input[name="level"]:checked');
-    const level = levelEl ? levelEl.value : 'Middle';
-
-    const sMin = document.getElementById('v-salary-min').value;
-    const sMax = document.getElementById('v-salary-max').value;
-    const currency = document.getElementById('v-currency').value;
-
-    // 2. Валидация
-    if (!title) return tg.showAlert("Введите название вакансии!");
-    if (vacancyTechStack.length === 0) return tg.showAlert("Добавьте хотя бы один тег стека!");
-
-    // 3. Отправка
-    tg.MainButton.showProgress();
-    
-    const { error } = await client.from('vacancies').insert([{
-        hr_id: userId, // ВАЖНО: ID текущего юзера
-        title: title,
-        city: city,
-        level: level,
-        salary_min: sMin ? parseInt(sMin) : null,
-        salary_max: sMax ? parseInt(sMax) : null,
-        currency: currency,
-        tech_stack: vacancyTechStack,
-        description: desc
-    }]);
-
-    tg.MainButton.hideProgress();
-
-    if (error) {
-        console.error(error);
-        tg.showAlert("Ошибка при создании: " + error.message);
-    } else {
-        tg.showAlert("✅ Вакансия успешно опубликована!");
-        // Очистка формы
-        document.getElementById('v-title').value = "";
-        document.getElementById('v-desc').value = "";
-        vacancyTechStack = [];
-        renderTechTags();
-        // Можно добавить редирект: window.location.href = 'index.html';
-    }
-}
-
-// Запуск при загрузке страницы
+// Запуск
 document.addEventListener('DOMContentLoaded', init);
