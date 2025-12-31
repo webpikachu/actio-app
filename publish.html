@@ -1,97 +1,268 @@
 <!DOCTYPE html>
-<html class="dark" lang="ru">
+<html lang="ru" class="dark">
 <head>
-    <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
-    <title>Actio - Разместить вакансию</title>
-    
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-    
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        /* Скрытие скроллбара */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        /* Стили радиокнопок */
-        input[type="radio"]:checked + div { @apply bg-blue-600 text-white ring-2 ring-blue-600; }
-    </style>
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  />
+  <title>Actio — Новая вакансия</title>
+
+  <!-- Telegram Mini App -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <style>
+    body {
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", Roboto, Ubuntu, sans-serif;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
 </head>
 
-<body class="bg-gray-100 dark:bg-black text-gray-900 dark:text-white h-screen flex flex-col">
+<body
+  class="bg-gray-100 dark:bg-black text-gray-900 dark:text-white h-screen flex flex-col"
+>
+  <!-- ================= HEADER ================= -->
+  <header
+    class="flex-none px-4 py-3 flex items-center bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800"
+  >
+    <button
+      onclick="window.location.href='index.html'"
+      class="mr-4 text-blue-500"
+    >
+      <svg
+        class="w-6 h-6"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M15 19l-7-7 7-7"
+        ></path>
+      </svg>
+    </button>
+    <h1 class="text-lg font-bold">Новая вакансия</h1>
+  </header>
 
-    <header class="flex-none px-4 py-3 flex items-center bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <button onclick="window.history.back()" class="mr-4 text-blue-500">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-        </button>
-        <h1 class="text-lg font-bold">Новая вакансия</h1>
-    </header>
-
-    <main class="flex-1 overflow-y-auto no-scrollbar p-4 space-y-6">
-        
-        <div class="space-y-4">
-            <div class="bg-white dark:bg-gray-900 rounded-xl p-3 shadow-sm space-y-3">
-                <input id="v-title" class="w-full bg-transparent border-b border-gray-200 dark:border-gray-800 py-2 focus:outline-none" placeholder="Название (напр. Frontend Dev)" type="text"/>
-                <input id="v-city" class="w-full bg-transparent py-2 focus:outline-none" placeholder="Город (напр. Москва / Remote)" type="text"/>
-            </div>
-        </div>
-
-        <div>
-            <label class="text-xs uppercase text-gray-500 font-semibold ml-1">Уровень</label>
-            <div class="mt-2 flex gap-2 bg-gray-200 dark:bg-gray-800 p-1 rounded-lg">
-                <label class="flex-1 cursor-pointer">
-                    <input class="sr-only" name="level" type="radio" value="Junior"/>
-                    <div class="text-center py-2 rounded-md text-sm transition-all bg-transparent">Jun</div>
-                </label>
-                <label class="flex-1 cursor-pointer">
-                    <input class="sr-only" name="level" type="radio" value="Middle" checked/>
-                    <div class="text-center py-2 rounded-md text-sm transition-all bg-white dark:bg-gray-700 shadow-sm">Mid</div>
-                </label>
-                <label class="flex-1 cursor-pointer">
-                    <input class="sr-only" name="level" type="radio" value="Senior"/>
-                    <div class="text-center py-2 rounded-md text-sm transition-all bg-transparent">Sen</div>
-                </label>
-            </div>
-        </div>
-
-        <div>
-            <label class="text-xs uppercase text-gray-500 font-semibold ml-1">Зарплата</label>
-            <div class="mt-2 flex gap-3">
-                <input id="v-salary-min" type="number" class="flex-1 bg-white dark:bg-gray-900 rounded-xl p-3 focus:outline-none" placeholder="От"/>
-                <input id="v-salary-max" type="number" class="flex-1 bg-white dark:bg-gray-900 rounded-xl p-3 focus:outline-none" placeholder="До"/>
-                <select id="v-currency" class="w-16 bg-white dark:bg-gray-900 rounded-xl p-3 focus:outline-none text-center">
-                    <option value="₽">₽</option>
-                    <option value="$">$</option>
-                    <option value="€">€</option>
-                </select>
-            </div>
-        </div>
-
-        <div>
-            <label class="text-xs uppercase text-gray-500 font-semibold ml-1">Стек технологий</label>
-            <div class="mt-2 bg-white dark:bg-gray-900 rounded-xl p-3 min-h-[60px]">
-                <div id="v-tech-list" class="flex flex-wrap gap-2 mb-2">
-                    </div>
-                <input id="v-tech-input" onkeydown="if(event.key==='Enter') addTechTag()" class="w-full bg-transparent text-sm focus:outline-none" placeholder="Введите навык и нажмите Enter..." type="text"/>
-            </div>
-        </div>
-
-        <div>
-            <label class="text-xs uppercase text-gray-500 font-semibold ml-1">Описание</label>
-            <textarea id="v-desc" class="w-full mt-2 bg-white dark:bg-gray-900 rounded-xl p-3 h-32 focus:outline-none resize-none" placeholder="Подробности о задачах и проекте..."></textarea>
-        </div>
-
-        <div class="h-20"></div> </main>
-
-    <div class="fixed bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-black/80 backdrop-blur-sm border-t border-gray-200 dark:border-gray-800">
-        <button onclick="publishVacancy()" class="w-full bg-blue-600 active:scale-95 transition-transform text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-600/30">
-            Опубликовать
-        </button>
+  <!-- ================= MAIN ================= -->
+  <main class="flex-1 overflow-y-auto no-scrollbar p-4 space-y-6">
+    <!-- TITLE / CITY -->
+    <div class="bg-white dark:bg-gray-900 rounded-xl p-3 shadow-sm space-y-3">
+      <input
+        id="v-title"
+        class="w-full bg-transparent border-b border-gray-200 dark:border-gray-800 py-2 focus:outline-none"
+        placeholder="Название (напр. Frontend Developer)"
+        type="text"
+      />
+      <input
+        id="v-city"
+        class="w-full bg-transparent py-2 focus:outline-none"
+        placeholder="Город (Москва / Remote)"
+        type="text"
+      />
     </div>
 
-    <script src="app.js"></script>
+    <!-- LEVEL -->
+    <div>
+      <label class="text-xs uppercase text-gray-500 font-semibold ml-1"
+        >Уровень</label
+      >
+      <div
+        class="mt-2 flex gap-2 bg-gray-200 dark:bg-gray-800 p-1 rounded-lg"
+      >
+        <label class="flex-1 cursor-pointer">
+          <input
+            class="sr-only"
+            name="level"
+            type="radio"
+            value="Junior"
+          />
+          <div class="text-center py-2 rounded-md">Jun</div>
+        </label>
+        <label class="flex-1 cursor-pointer">
+          <input
+            class="sr-only"
+            name="level"
+            type="radio"
+            value="Middle"
+            checked
+          />
+          <div
+            class="text-center py-2 rounded-md bg-white dark:bg-gray-700 shadow-sm"
+          >
+            Mid
+          </div>
+        </label>
+        <label class="flex-1 cursor-pointer">
+          <input
+            class="sr-only"
+            name="level"
+            type="radio"
+            value="Senior"
+          />
+          <div class="text-center py-2 rounded-md">Sen</div>
+        </label>
+      </div>
+    </div>
+
+    <!-- SALARY -->
+    <div>
+      <label class="text-xs uppercase text-gray-500 font-semibold ml-1"
+        >Зарплата</label
+      >
+      <div class="mt-2 flex gap-3">
+        <input
+          id="v-salary-min"
+          type="number"
+          class="flex-1 bg-white dark:bg-gray-900 rounded-xl p-3 focus:outline-none"
+          placeholder="От"
+        />
+        <input
+          id="v-salary-max"
+          type="number"
+          class="flex-1 bg-white dark:bg-gray-900 rounded-xl p-3 focus:outline-none"
+          placeholder="До"
+        />
+        <select
+          id="v-currency"
+          class="w-16 bg-white dark:bg-gray-900 rounded-xl p-3 focus:outline-none text-center"
+        >
+          <option value="₽">₽</option>
+          <option value="$">$</option>
+          <option value="€">€</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- RESPONSE PROMISE -->
+    <div>
+      <label class="text-xs uppercase text-gray-500 font-semibold ml-1"
+        >Обещание ответа</label
+      >
+      <select
+        id="v-promise"
+        class="mt-2 w-full bg-white dark:bg-gray-900 rounded-xl p-3 focus:outline-none"
+      >
+        <option value="60">1 час</option>
+        <option value="1440" selected>24 часа</option>
+        <option value="4320">3 дня</option>
+        <option value="10080">7 дней</option>
+      </select>
+    </div>
+
+    <!-- TECH STACK -->
+    <div>
+      <label class="text-xs uppercase text-gray-500 font-semibold ml-1"
+        >Стек технологий</label
+      >
+      <div
+        class="mt-2 bg-white dark:bg-gray-900 rounded-xl p-3 min-h-[60px]"
+      >
+        <div id="v-tech-list" class="flex flex-wrap gap-2 mb-2"></div>
+        <input
+          id="v-tech-input"
+          class="w-full bg-transparent text-sm focus:outline-none"
+          placeholder="Введите навык и нажмите Enter"
+          type="text"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();addTechTag();}"
+        />
+      </div>
+    </div>
+
+    <!-- DESCRIPTION -->
+    <div>
+      <label class="text-xs uppercase text-gray-500 font-semibold ml-1"
+        >Описание</label
+      >
+      <textarea
+        id="v-desc"
+        class="w-full mt-2 bg-white dark:bg-gray-900 rounded-xl p-3 h-32 focus:outline-none resize-none"
+        placeholder="Подробности о проекте и задачах"
+      ></textarea>
+    </div>
+
+    <div class="h-24"></div>
+  </main>
+
+  <!-- ================= ACTION ================= -->
+  <div
+    class="fixed bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-black/80 backdrop-blur-sm border-t border-gray-200 dark:border-gray-800"
+  >
+    <button
+      onclick="publishVacancy()"
+      class="w-full bg-blue-600 active:scale-95 transition-transform text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-600/30"
+    >
+      Опубликовать
+    </button>
+  </div>
+
+  <!-- ================= LOGIC ================= -->
+  <script src="app.js"></script>
+
+  <!-- ================= PAGE LOGIC ================= -->
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    let vacancyTechStack = [];
+
+    async function addTechTag() {
+      const input = document.getElementById("v-tech-input");
+      const value = input.value.trim();
+      if (!value || vacancyTechStack.includes(value)) return;
+      vacancyTechStack.push(value);
+      input.value = "";
+      renderTechStack();
+    }
+
+    function renderTechStack() {
+      const list = document.getElementById("v-tech-list");
+      list.innerHTML = vacancyTechStack
+        .map(
+          (t) =>
+            `<span class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 text-xs rounded-md">${t}</span>`
+        )
+        .join("");
+    }
+
+    // HR ONLY GUARD
+    document.addEventListener("DOMContentLoaded", async () => {
+      const userId = tg.initDataUnsafe?.user?.id;
+      if (!userId) return;
+
+      const { data } = await supabaseClient
+        .from("profiles")
+        .select("role")
+        .eq("user_id", userId)
+        .single();
+
+      if (!data || data.role !== "hr") {
+        tg.showAlert("Доступ только для рекрутеров");
+        window.location.href = "index.html";
+      }
+    });
+  </script>
 </body>
 </html>

@@ -1,129 +1,256 @@
 <!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Создать роль</title>
 
-<html class="dark" lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Create Role - Telegram Mini App</title>
-<!-- Material Symbols -->
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<!-- Tailwind CSS -->
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<!-- Theme Configuration -->
-<script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#0d7ff2",
-                        "background-light": "#f5f7f8",
-                        "background-dark": "#101922",
-                        "surface-dark": "#182634",
-                        "border-dark": "#314d68",
-                        "text-secondary-dark": "#90adcb",
-                    },
-                    fontFamily: {
-                        "display": ["Inter", "Noto Sans", "sans-serif"]
-                    },
-                    borderRadius: {
-                        "DEFAULT": "0.25rem",
-                        "lg": "0.5rem",
-                        "xl": "0.75rem",
-                        "2xl": "1rem",
-                        "full": "9999px"
-                    },
-                },
-            },
-        }
-    </script>
-<style>
-        /* Custom Scrollbar for a more native feel in web view */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(144, 173, 203, 0.3);
-            border-radius: 10px;
-        }
-        body {
-            -webkit-tap-highlight-color: transparent;
-        }
-    </style>
-<style>
-    body {
-      min-height: max(884px, 100dvh);
-    }
+  <!-- Telegram Mini App -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#0d7ff2",
+            bgLight: "#f5f7f8",
+            bgDark: "#101922",
+            surfaceDark: "#182634",
+            borderDark: "#314d68",
+            textMuted: "#90adcb",
+          },
+          fontFamily: {
+            display: ["Inter", "sans-serif"],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    body { font-family: Inter, system-ui, sans-serif; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { scrollbar-width: none; }
   </style>
-  </head>
-<body class="bg-background-light dark:bg-background-dark font-display min-h-screen flex flex-col antialiased selection:bg-primary/30 selection:text-primary">
-<!-- Top Navigation Bar -->
-<header class="sticky top-0 z-50 flex items-center justify-between px-4 py-3 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-gray-200 dark:border-border-dark/50 transition-colors duration-300">
-<button class="flex items-center justify-center p-2 -ml-2 rounded-full text-primary hover:bg-primary/10 transition-colors active:scale-95">
-<span class="material-symbols-outlined text-[24px]">arrow_back_ios_new</span>
-<span class="text-base font-medium ml-1">Назад</span>
-</button>
-<h1 class="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Создать роль</h1>
-<div class="w-[70px]"></div> <!-- Spacer to balance the 'Back' button width -->
-</header>
-<!-- Main Content Form -->
-<main class="flex-1 w-full max-w-lg mx-auto p-4 pb-32 flex flex-col gap-6">
-<!-- Role Name Section -->
-<section class="flex flex-col gap-2">
-<label class="text-sm font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider ml-1" for="role-name">Название Роли</label>
-<div class="relative group">
-<input class="w-full h-14 pl-4 pr-10 rounded-xl border border-gray-200 dark:border-border-dark bg-white dark:bg-surface-dark text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-text-secondary-dark/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-sm text-base" id="role-name" placeholder="Например, Python Senior Dev" type="text"/>
-<div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-text-secondary-dark pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity">
-<span class="material-symbols-outlined text-[20px]">edit</span>
+</head>
+
+<body class="bg-bgLight dark:bg-bgDark text-gray-900 dark:text-white h-screen overflow-hidden">
+
+<div class="relative flex flex-col h-full max-w-md mx-auto">
+
+  <!-- HEADER -->
+  <header class="sticky top-0 z-20 flex items-center gap-3 px-4 py-3 bg-bgLight/95 dark:bg-bgDark/95 backdrop-blur border-b border-gray-200 dark:border-borderDark">
+    <button onclick="goBack()" class="p-2 -ml-2 rounded-full hover:bg-gray-200 dark:hover:bg-surfaceDark">
+      <span class="material-symbols-outlined">arrow_back_ios_new</span>
+    </button>
+    <h1 class="flex-1 text-center font-semibold truncate pr-6">
+      Создать роль
+    </h1>
+  </header>
+
+  <!-- CONTENT -->
+  <main class="flex-1 overflow-y-auto no-scrollbar p-4 pb-32 space-y-6">
+
+    <!-- ROLE NAME -->
+    <section class="space-y-2">
+      <label class="text-xs uppercase text-gray-500 dark:text-textMuted font-semibold ml-1">
+        Название роли
+      </label>
+      <input
+        id="role-name"
+        type="text"
+        placeholder="Например: Python Senior Developer"
+        class="w-full h-14 px-4 rounded-xl border border-gray-200 dark:border-borderDark bg-white dark:bg-surfaceDark focus:outline-none focus:ring-2 focus:ring-primary text-base"
+      />
+      <p class="text-xs text-gray-400 ml-1">
+        Краткое и точное позиционирование под рынок.
+      </p>
+    </section>
+
+    <!-- SKILLS -->
+    <section class="space-y-3">
+      <div class="flex items-center justify-between ml-1">
+        <label class="text-xs uppercase text-gray-500 dark:text-textMuted font-semibold">
+          Навыки
+        </label>
+        <button onclick="clearSkills()" class="text-xs text-primary hover:underline">
+          Очистить
+        </button>
+      </div>
+
+      <div id="skills-list" class="flex flex-wrap gap-2"></div>
+
+      <div class="flex rounded-xl overflow-hidden border border-gray-200 dark:border-borderDark">
+        <input
+          id="skill-input"
+          type="text"
+          placeholder="Добавить навык и нажать Enter"
+          class="flex-1 h-12 px-4 bg-white dark:bg-surfaceDark focus:outline-none text-sm"
+          onkeydown="handleSkillInput(event)"
+        />
+        <button
+          onclick="addSkill()"
+          class="px-4 bg-gray-100 dark:bg-surfaceDark hover:bg-gray-200 dark:hover:bg-borderDark transition"
+        >
+          <span class="material-symbols-outlined">add</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- EXPERIENCE -->
+    <section class="space-y-2">
+      <label class="text-xs uppercase text-gray-500 dark:text-textMuted font-semibold ml-1">
+        Опыт
+      </label>
+      <textarea
+        id="experience"
+        rows="6"
+        placeholder="Кратко опишите ваш опыт, ключевые проекты и достижения…"
+        class="w-full p-4 rounded-xl border border-gray-200 dark:border-borderDark bg-white dark:bg-surfaceDark focus:outline-none focus:ring-2 focus:ring-primary resize-none text-base"
+      ></textarea>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-4 pb-8 bg-bgLight/90 dark:bg-bgDark/90 backdrop-blur border-t border-gray-200 dark:border-borderDark">
+    <button
+      onclick="saveRole()"
+      class="w-full h-14 bg-primary hover:bg-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/30 active:scale-[0.98] transition flex items-center justify-center gap-2"
+    >
+      <span class="material-symbols-outlined">save</span>
+      Сохранить роль
+    </button>
+  </footer>
+
 </div>
-</div>
-<p class="text-xs text-gray-400 dark:text-gray-500 ml-1">Короткое и понятное название вашей специализации.</p>
-</section>
-<!-- Skills Section -->
-<section class="flex flex-col gap-3">
-<div class="flex items-center justify-between ml-1">
-<label class="text-sm font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">Основные Навыки</label>
-<span class="text-xs text-primary cursor-pointer hover:underline font-medium">Очистить все</span>
-</div>
-<!-- Chips Container -->
-<div class="flex flex-wrap gap-2 mb-1">
-<div class="flex items-center h-8 px-3 rounded-lg bg-primary/10 dark:bg-[#223649] border border-primary/20 dark:border-transparent group cursor-pointer hover:bg-red-500/10 dark:hover:bg-red-500/20 transition-colors">
-<p class="text-primary dark:text-white text-sm font-medium mr-1 group-hover:text-red-500 transition-colors">Python</p>
-<span class="material-symbols-outlined text-[16px] text-primary dark:text-white/70 group-hover:text-red-500">close</span>
-</div>
-<div class="flex items-center h-8 px-3 rounded-lg bg-primary/10 dark:bg-[#223649] border border-primary/20 dark:border-transparent group cursor-pointer hover:bg-red-500/10 dark:hover:bg-red-500/20 transition-colors">
-<p class="text-primary dark:text-white text-sm font-medium mr-1 group-hover:text-red-500 transition-colors">Django</p>
-<span class="material-symbols-outlined text-[16px] text-primary dark:text-white/70 group-hover:text-red-500">close</span>
-</div>
-<div class="flex items-center h-8 px-3 rounded-lg bg-primary/10 dark:bg-[#223649] border border-primary/20 dark:border-transparent group cursor-pointer hover:bg-red-500/10 dark:hover:bg-red-500/20 transition-colors">
-<p class="text-primary dark:text-white text-sm font-medium mr-1 group-hover:text-red-500 transition-colors">PostgreSQL</p>
-<span class="material-symbols-outlined text-[16px] text-primary dark:text-white/70 group-hover:text-red-500">close</span>
-</div>
-</div>
-<!-- Add Skill Input -->
-<div class="flex w-full items-stretch rounded-xl shadow-sm">
-<input class="flex-1 w-full h-14 pl-4 border border-gray-200 dark:border-border-dark bg-white dark:bg-surface-dark rounded-l-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-text-secondary-dark/50 text-base transition-all z-10" placeholder="Добавить навык..."/>
-<button class="px-5 bg-gray-100 dark:bg-surface-dark border-y border-r border-gray-200 dark:border-border-dark rounded-r-xl text-gray-500 dark:text-text-secondary-dark hover:text-primary dark:hover:text-white hover:bg-gray-200 dark:hover:bg-border-dark transition-colors flex items-center justify-center">
-<span class="material-symbols-outlined">add_circle</span>
-</button>
-</div>
-</section>
-<!-- Experience Section -->
-<section class="flex flex-col gap-2">
-<label class="text-sm font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider ml-1" for="experience">Опыт Работы</label>
-<textarea class="w-full min-h-[160px] p-4 rounded-xl border border-gray-200 dark:border-border-dark bg-white dark:bg-surface-dark text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-text-secondary-dark/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-sm text-base resize-none" id="experience" placeholder="Опишите ключевые достижения, проекты и компании, в которых вы работали..."></textarea>
-</section>
-</main>
-<!-- Sticky Bottom Action Bar -->
-<div class="fixed bottom-0 left-0 w-full bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-lg border-t border-gray-200 dark:border-border-dark/50 p-4 pb-8 z-40">
-<div class="max-w-lg mx-auto">
-<button class="w-full h-14 bg-primary hover:bg-blue-600 text-white text-lg font-semibold rounded-xl shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
-<span class="material-symbols-outlined">save</span>
-                Сохранить Роль
-            </button>
-</div>
-</div>
-</body></html>
+
+<!-- ================= LOGIC ================= -->
+<script>
+const tg = window.Telegram.WebApp;
+tg.expand();
+
+const SUPABASE_URL = "https://ТВОЙ.supabase.co";
+const SUPABASE_KEY = "ТВОЙ_PUBLIC_ANON_KEY";
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const currentUserId = tg.initDataUnsafe?.user?.id;
+const returnTo = new URLSearchParams(window.location.search).get("return_to");
+
+const skills = [];
+const skillsList = document.getElementById("skills-list");
+
+if (!currentUserId) {
+  tg.showAlert("Ошибка авторизации");
+  goBack();
+}
+
+/* ================= SKILLS ================= */
+function handleSkillInput(e) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    addSkill();
+  }
+}
+
+function addSkill() {
+  const input = document.getElementById("skill-input");
+  const value = input.value.trim();
+  if (!value || skills.includes(value)) return;
+
+  skills.push(value);
+  input.value = "";
+  renderSkills();
+}
+
+function removeSkill(skill) {
+  const i = skills.indexOf(skill);
+  if (i >= 0) skills.splice(i, 1);
+  renderSkills();
+}
+
+function clearSkills() {
+  skills.length = 0;
+  renderSkills();
+}
+
+function renderSkills() {
+  skillsList.innerHTML = skills
+    .map(
+      (s) => `
+      <div class="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-sm cursor-pointer"
+           onclick="removeSkill('${escapeHtml(s)}')">
+        <span>${escapeHtml(s)}</span>
+        <span class="material-symbols-outlined text-[16px]">close</span>
+      </div>`
+    )
+    .join("");
+}
+
+/* ================= SAVE ================= */
+async function saveRole() {
+  const roleName = document.getElementById("role-name").value.trim();
+  const experience = document.getElementById("experience").value.trim();
+
+  if (!roleName) {
+    tg.showAlert("Введите название роли");
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from("user_roles")
+    .insert([{
+      user_id: currentUserId,
+      role_name: roleName,
+      skills: skills,
+      experience: experience
+    }]);
+
+  if (error) {
+    tg.showAlert("Ошибка: " + error.message);
+    return;
+  }
+
+  tg.showAlert("Роль сохранена");
+
+  if (returnTo) {
+    window.location.href = returnTo;
+  } else {
+    window.location.href = "roles.html";
+  }
+}
+
+/* ================= HELPERS ================= */
+function goBack() {
+  if (returnTo) {
+    window.location.href = returnTo;
+  } else {
+    window.location.href = "roles.html";
+  }
+}
+
+function escapeHtml(str) {
+  return (str || "").replace(/[&<>"']/g, (m) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;",
+  }[m]));
+}
+</script>
+
+</body>
+</html>
