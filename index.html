@@ -27,29 +27,29 @@
     </script>
 
     <style>
-        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        /* Логика SPA: скрываем все страницы по умолчанию */
+        body { font-family: 'Inter', sans-serif; background-color: #101922; color: white; -webkit-tap-highlight-color: transparent; }
         .page { display: none; height: 100vh; flex-direction: column; overflow: hidden; }
-        .page.active { display: flex; }
+        .page.active { display: flex; animation: fadeIn 0.3s ease; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
-        /* Анимация шторки (Bottom Sheet) */
         #role-sheet { transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 100; }
         #role-sheet.active { transform: translateY(0); }
         
-        /* Стиль активной кнопки в навигации */
-        .nav-btn.active { color: #0d7ff2; opacity: 1; }
+        .tag-badge { background: rgba(13, 127, 242, 0.15); border: 1px solid rgba(13, 127, 242, 0.3); color: #0d7ff2; }
     </style>
 </head>
-<body class="bg-background-dark text-white antialiased overflow-hidden">
+<body class="antialiased overflow-hidden">
 
     <section id="page-market" class="page active">
         <header class="p-4 border-b border-border-dark flex justify-between items-center bg-background-dark/95 backdrop-blur-md sticky top-0 z-10">
-            <h1 class="text-2xl font-black italic tracking-tighter uppercase">Actio</h1>
-            <div class="flex gap-3">
-                <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-                    <span class="material-symbols-outlined text-[18px]">bolt</span>
-                </div>
+            <h1 class="text-2xl font-black italic tracking-tighter uppercase text-white">Actio</h1>
+            <div class="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center text-primary">
+                <span class="material-symbols-outlined">bolt</span>
             </div>
         </header>
         <main id="vacancies-list" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-32">
@@ -57,42 +57,39 @@
     </section>
 
     <section id="page-vacancy-details" class="page bg-black">
-        <header class="p-4 border-b border-border-dark flex items-center justify-between">
+        <header class="p-4 border-b border-border-dark flex items-center justify-between bg-black">
             <button onclick="showPage('page-market')" class="text-primary flex items-center">
                 <span class="material-symbols-outlined">arrow_back</span>
             </button>
-            <h1 class="font-bold text-sm uppercase tracking-widest">Сигнал</h1>
+            <h1 class="font-bold text-sm uppercase tracking-widest text-gray-400">Детали сигнала</h1>
             <div class="w-6"></div>
         </header>
-        <main id="v-details-content" class="flex-1 overflow-y-auto no-scrollbar pb-40">
+        <main id="v-details-content" class="flex-1 overflow-y-auto p-5 no-scrollbar pb-40">
             </main>
-        <footer class="fixed bottom-0 left-0 right-0 p-4 pb-10 bg-black/90 border-t border-border-dark z-20">
-            <button onclick="openRoleSheet()" class="w-full bg-primary h-14 rounded-2xl font-black uppercase tracking-widest active:scale-95 transition-transform shadow-lg shadow-blue-500/20">
-                Откликнуться на сигнал
+        <footer class="fixed bottom-0 left-0 right-0 p-4 pb-10 bg-black/90 border-t border-border-dark z-20 backdrop-blur-md">
+            <button onclick="openRoleSheet()" class="w-full bg-primary h-14 rounded-2xl font-black uppercase tracking-widest active:scale-95 transition-transform shadow-[0_8px_30px_rgba(13,127,242,0.3)]">
+                Откликнуться
             </button>
         </footer>
     </section>
 
     <section id="page-profile" class="page">
-        <header class="p-4 border-b border-border-dark text-center">
-            <h1 class="text-xl font-black uppercase italic">Кабинет</h1>
+        <header class="p-4 border-b border-border-dark text-center bg-surface-dark/50">
+            <h1 class="text-xl font-black uppercase italic tracking-widest">Личный Кабинет</h1>
         </header>
         <main class="flex-1 overflow-y-auto p-4 space-y-8 no-scrollbar pb-32">
             <div>
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Мои Роли</h2>
-                    <button onclick="showPage('page-role-create')" class="text-primary text-xs flex items-center gap-1 font-bold">
-                        <span class="material-symbols-outlined text-sm">add_circle</span> СОЗДАТЬ
+                    <button onclick="showPage('page-role-create')" class="text-primary text-xs flex items-center gap-1 font-black underline">
+                        + СОЗДАТЬ НОВУЮ
                     </button>
                 </div>
-                <div id="user-roles-list" class="space-y-3">
-                    </div>
+                <div id="user-roles-list" class="space-y-3"></div>
             </div>
-
             <div>
-                <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Мои отклики</h2>
-                <div id="my-applications-list" class="space-y-3">
-                    </div>
+                <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 font-black">История откликов</h2>
+                <div id="my-applications-list" class="space-y-3"></div>
             </div>
         </main>
     </section>
@@ -100,95 +97,109 @@
     <section id="page-role-create" class="page">
         <header class="p-4 border-b border-border-dark flex items-center justify-between">
             <button onclick="showPage('page-profile')" class="text-primary"><span class="material-symbols-outlined">close</span></button>
-            <h1 class="font-bold">Настройка роли</h1>
+            <h1 class="font-bold uppercase text-sm tracking-widest">Новая роль</h1>
             <div class="w-6"></div>
         </header>
         <main class="flex-1 overflow-y-auto p-4 space-y-6 no-scrollbar">
-            <div class="space-y-4">
+            <div class="space-y-5">
                 <div>
-                    <label class="text-[10px] text-gray-500 uppercase font-bold ml-1">Название позиции</label>
-                    <input id="role-name" type="text" placeholder="Напр. Senior Python Developer" class="w-full h-14 px-4 rounded-xl border border-border-dark bg-surface-dark outline-none focus:ring-1 focus:ring-primary mt-1">
+                    <label class="text-[10px] text-gray-500 uppercase font-black ml-1">Название позиции</label>
+                    <input id="role-name" type="text" placeholder="Напр. Senior Python Developer" class="w-full h-14 px-4 rounded-2xl border border-border-dark bg-surface-dark outline-none focus:ring-2 focus:ring-primary mt-1">
                 </div>
                 
                 <div>
-                    <label class="text-[10px] text-gray-500 uppercase font-bold ml-1">Навыки (через запятую)</label>
-                    <input id="skill-input" type="text" placeholder="Python, Docker, FastAPI..." class="w-full h-14 px-4 rounded-xl border border-border-dark bg-surface-dark outline-none mt-1">
+                    <label class="text-[10px] text-gray-500 uppercase font-black ml-1">Ваши ключевые навыки</label>
+                    <div class="flex gap-2 mt-1">
+                        <input id="skill-input" type="text" placeholder="Python, Docker..." class="flex-1 h-14 px-4 rounded-2xl border border-border-dark bg-surface-dark outline-none">
+                        <button onclick="addSkill()" class="w-14 h-14 bg-surface-dark border border-border-dark rounded-2xl text-primary flex items-center justify-center active:scale-90 transition-all">
+                            <span class="material-symbols-outlined">add_circle</span>
+                        </button>
+                    </div>
+                    <div id="skills-container" class="flex flex-wrap gap-2 mt-3"></div>
                 </div>
 
                 <div>
-                    <label class="text-[10px] text-gray-500 uppercase font-bold ml-1">Опыт и проекты</label>
-                    <textarea id="experience" placeholder="Расскажите о своих достижениях..." class="w-full min-h-[160px] p-4 rounded-xl border border-border-dark bg-surface-dark outline-none resize-none mt-1"></textarea>
+                    <label class="text-[10px] text-gray-500 uppercase font-black ml-1">Опыт работы</label>
+                    <textarea id="experience" placeholder="Опишите ваши проекты и достижения..." class="w-full min-h-[160px] p-4 rounded-2xl border border-border-dark bg-surface-dark outline-none resize-none mt-1 focus:ring-2 focus:ring-primary"></textarea>
                 </div>
                 
-                <button onclick="saveRole()" class="w-full bg-primary h-14 rounded-2xl font-bold uppercase tracking-widest active:scale-95 transition-all shadow-lg">Сохранить профиль</button>
+                <button onclick="saveRole()" class="w-full bg-primary h-14 rounded-2xl font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all">
+                    Сохранить Роль
+                </button>
             </div>
         </main>
     </section>
 
     <section id="page-hr" class="page">
-        <header class="p-4 border-b border-border-dark text-center">
+        <header class="p-4 border-b border-border-dark text-center bg-surface-dark/50">
             <h1 class="text-xl font-black italic uppercase tracking-widest">Signal Center</h1>
         </header>
         <main class="flex-1 overflow-y-auto p-4 space-y-6 no-scrollbar pb-32">
-            <div class="p-5 bg-surface-dark rounded-3xl border border-border-dark">
-                <h2 class="text-sm font-bold text-primary uppercase mb-4 tracking-tighter">Новая вакансия</h2>
+            <div class="p-6 bg-surface-dark rounded-[32px] border border-border-dark shadow-2xl">
+                <h2 class="text-xs font-black text-primary uppercase mb-5 tracking-widest text-center">Опубликовать вакансию</h2>
                 <div class="space-y-4">
-                    <input id="v-title" type="text" placeholder="Название вакансии" class="w-full h-12 bg-transparent border-b border-border-dark outline-none focus:border-primary">
-                    
+                    <input id="v-title" type="text" placeholder="Название (напр. UI Designer)" class="w-full h-12 bg-transparent border-b border-border-dark outline-none focus:border-primary placeholder-gray-600">
                     <div class="grid grid-cols-2 gap-4">
-                        <input id="v-city" type="text" placeholder="Город" class="h-10 bg-transparent border-b border-border-dark outline-none">
-                        <select id="v-level" class="bg-transparent border-b border-border-dark outline-none text-gray-400">
+                        <input id="v-city" type="text" placeholder="Город" class="h-10 bg-transparent border-b border-border-dark outline-none placeholder-gray-600 text-sm">
+                        <select id="v-level" class="bg-transparent border-b border-border-dark outline-none text-gray-400 text-sm">
                             <option value="Junior">Junior</option>
                             <option value="Middle" selected>Middle</option>
                             <option value="Senior">Senior</option>
+                            <option value="Lead">Lead</option>
                         </select>
                     </div>
-
                     <div class="grid grid-cols-2 gap-4">
-                        <input id="v-salary-min" type="number" placeholder="ЗП От" class="h-10 bg-transparent border-b border-border-dark outline-none">
-                        <input id="v-salary-max" type="number" placeholder="ЗП До" class="h-10 bg-transparent border-b border-border-dark outline-none">
+                        <input id="v-salary-min" type="number" placeholder="ЗП От" class="h-10 bg-transparent border-b border-border-dark outline-none placeholder-gray-600 text-sm">
+                        <input id="v-salary-max" type="number" placeholder="ЗП До" class="h-10 bg-transparent border-b border-border-dark outline-none placeholder-gray-600 text-sm">
                     </div>
-
-                    <input id="v-stack" type="text" placeholder="Технологический стек (через запятую)" class="w-full h-10 bg-transparent border-b border-border-dark outline-none">
-
-                    <textarea id="v-desc" placeholder="Описание..." class="w-full min-h-[80px] bg-transparent border-b border-border-dark outline-none resize-none"></textarea>
-
-                    <button onclick="publishVacancy()" class="w-full bg-white text-black h-14 rounded-2xl font-black uppercase tracking-widest active:scale-95 transition-all mt-4">Отправить сигнал</button>
+                    <div class="space-y-2">
+    <label class="text-[10px] text-gray-500 uppercase font-black ml-1">Стек технологий</label>
+    <div class="flex gap-2">
+        <input id="v-stack-input" type="text" placeholder="Node, React, Postgres..." class="flex-1 h-14 px-4 rounded-2xl border border-border-dark bg-surface-dark outline-none focus:ring-1 focus:ring-primary">
+        <button onclick="addTechTag()" class="w-14 h-14 bg-surface-dark border border-border-dark rounded-2xl text-primary flex items-center justify-center active:scale-90 transition-all">
+            <span class="material-symbols-outlined">add_circle</span>
+        </button>
+    </div>
+    <div id="v-tech-list" class="flex flex-wrap gap-2 mt-2"></div>
+</div>
+                    <textarea id="v-desc" placeholder="Описание и требования..." class="w-full min-h-[100px] bg-transparent border-b border-border-dark outline-none resize-none placeholder-gray-600 text-sm mt-2"></textarea>
+                    <button onclick="publishVacancy()" class="w-full bg-white text-black h-14 rounded-2xl font-black uppercase tracking-tighter active:scale-95 transition-all mt-6">
+                        Отправить сигнал
+                    </button>
                 </div>
             </div>
             
             <div class="mt-8">
-                <h3 class="text-xs font-bold text-gray-500 uppercase mb-4 ml-1">Мои активные вакансии</h3>
+                <h3 class="text-[10px] font-black text-gray-500 uppercase mb-4 ml-2 tracking-widest">Мои вакансии</h3>
                 <div id="hr-vacancies-list" class="space-y-3"></div>
             </div>
         </main>
     </section>
 
-    <nav class="fixed bottom-0 left-0 right-0 h-20 bg-background-dark/80 backdrop-blur-xl border-t border-border-dark/50 flex justify-around items-center px-4 z-40 pb-4">
-        <button onclick="showPage('page-market')" class="nav-btn flex flex-col items-center gap-1 opacity-40 transition-all active">
-            <span class="material-symbols-outlined text-[26px]">explore</span>
-            <span class="text-[9px] font-bold uppercase tracking-tighter">Маркет</span>
+    <nav class="fixed bottom-0 left-0 right-0 h-20 bg-background-dark/80 backdrop-blur-xl border-t border-border-dark/50 flex justify-around items-center px-4 z-40 pb-5">
+        <button onclick="showPage('page-market')" class="nav-btn flex flex-col items-center gap-1 opacity-100 text-primary transition-all">
+            <span class="material-symbols-outlined text-[28px]">explore</span>
+            <span class="text-[8px] font-black uppercase tracking-widest">Маркет</span>
         </button>
         <button onclick="showPage('page-profile')" class="nav-btn flex flex-col items-center gap-1 opacity-40 transition-all">
-            <span class="material-symbols-outlined text-[26px]">account_circle</span>
-            <span class="text-[9px] font-bold uppercase tracking-tighter">Профиль</span>
+            <span class="material-symbols-outlined text-[28px]">account_circle</span>
+            <span class="text-[8px] font-black uppercase tracking-widest">Профиль</span>
         </button>
         <button id="nav-hr-btn" onclick="showPage('page-hr')" class="nav-btn hidden flex flex-col items-center gap-1 opacity-40 transition-all">
-            <span class="material-symbols-outlined text-[26px]">sensors</span>
-            <span class="text-[9px] font-bold uppercase tracking-tighter">HR Панель</span>
+            <span class="material-symbols-outlined text-[28px]">sensors</span>
+            <span class="text-[8px] font-black uppercase tracking-widest">Сигналы</span>
         </button>
     </nav>
 
-    <div id="overlay" onclick="closeRoleSheet()" class="fixed inset-0 bg-black/80 z-[90] hidden"></div>
-    <div id="role-sheet" class="fixed inset-x-0 bottom-0 bg-surface-dark rounded-t-[32px] p-6 pb-12 shadow-2xl overflow-hidden">
-        <div class="w-12 h-1.5 bg-gray-700 rounded-full mx-auto mb-8"></div>
-        <h3 class="text-xl font-black italic mb-2 uppercase">Выберите профиль</h3>
-        <p class="text-xs text-gray-400 mb-6 font-medium uppercase tracking-widest">Какой опыт использовать для отклика?</p>
+    <div id="overlay" onclick="closeRoleSheet()" class="fixed inset-0 bg-black/80 z-[90] hidden transition-opacity duration-300"></div>
+    <div id="role-sheet" class="fixed inset-x-0 bottom-0 bg-surface-dark rounded-t-[40px] p-6 pb-12 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] overflow-hidden">
+        <div class="w-12 h-1.5 bg-border-dark rounded-full mx-auto mb-8"></div>
+        <h3 class="text-2xl font-black italic mb-2 uppercase tracking-tighter">Выберите профиль</h3>
+        <p class="text-[10px] text-gray-500 mb-8 font-black uppercase tracking-[0.2em]">Для отправки отклика HR-у</p>
         
-        <div id="roles-list-container" class="space-y-3 mb-8 max-h-[40vh] overflow-y-auto no-scrollbar">
-            </div>
+        <div id="roles-list-container" class="space-y-3 mb-8 max-h-[40vh] overflow-y-auto no-scrollbar"></div>
         
-        <button id="confirm-apply-btn" class="w-full h-14 bg-primary rounded-2xl font-black uppercase tracking-widest shadow-lg active:scale-95 transition-transform">
+        <button id="confirm-apply-btn" class="w-full h-14 bg-primary rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 active:scale-95 transition-transform">
             Подтвердить сигнал
         </button>
     </div>
