@@ -1,169 +1,140 @@
 require('dotenv').config();
-const { Bot, InlineKeyboard, Keyboard } = require("grammy");
+const { Bot, InlineKeyboard } = require("grammy");
 const { createClient } = require('@supabase/supabase-js');
 
-// 1. Инициализация
+// Проверка переменных окружения
+if (!process.env.BOT_TOKEN || !process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
+    console.error("❌ ОШИБКА: Не заполнен .env файл!");
+    process.exit(1);
+}
+
 const bot = new Bot(process.env.BOT_TOKEN);
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-// 2. Функция прослушивания базы в реальном времени (Realtime)
-// Важно: Убедись, что в Supabase включена репликация для таблицы 'applications'!
+// --- ЛОГИКА REALTIME (СЛУШАЕМ БАЗУ) ---
 const listenToApplications = () => {
-    console.log("🔔 Realtime: Слушаю новые отклики...");
+    console.log("🔔 Подключение к Realtime Supabase...");
+    
     supabase
-        .channel('schema-db-changes')
+        .channel('applications-tracker')
         .on('postgres_changes', 
             { event: 'INSERT', schema: 'public', table: 'applications' }, 
             async (payload) => {
                 const app = payload.new;
-                console.log("🚀 Получен новый отклик:", app);
+                console.log("🚀 Новый отклик:", app);
 
-                // Отправляем уведомление HR-у (используем hr_id из таблицы)
+                if (!app.hr_id) return console.error("❌ В отклике нет HR_ID!");
+
                 try {
                     await bot.api.sendMessage(app.hr_id, 
-                        `🚀 <b>НОВЫЙ ОТКЛИК!</b>\n\n` +
-                        `👤 Кандидат: ${app.candidate_name}\n` +
-                        `💼 Роль: ${app.role}`, 
+                        `🔔 <b>НОВЫЙ ОТКЛИК!</b>\n\n` +
+                        `👤 <b>Кандидат:</b> ${app.candidate_name || 'Не указан'}\n` +
+                        `💼 <b>На позицию:</b> ${app.role || 'Не указана'}\n` + 
+                        `📅 <b>Дата:</b> ${new Date().toLocaleString('ru-RU')}`,
                         {
-                            // HTML более устойчив к символам типа '_', которые часто ломают Markdown
                             parse_mode: "HTML", 
                             reply_markup: new InlineKeyboard()
-                                .text("✅ ПРИНЯТЬ", `accept_${app.id}`)
-                                .text("❌ ОТКЛОНИТЬ", `reject_${app.id}`)
+                                .text("✅ Принять", `decision_accept_${app.id}`)
+                                .text("❌ Отклонить", `decision_reject_${app.id}`)
                         }
                     );
                 } catch (e) {
-                    console.error("❌ Ошибка отправки сообщения HR:", e.message);
+                    console.error(`❌ Не удалось отправить сообщение HR (${app.hr_id}):`, e.message);
                 }
             }
         )
-        .subscribe();
+        .subscribe((status) => {
+            console.log("Статус подписки Realtime:", status);
+        });
 };
 
-// 3. Обработка нажатий на кнопки (Callback Queries)
+// --- ОБРАБОТКА КНОПОК ---
 bot.on("callback_query:data", async (ctx) => {
     const data = ctx.callbackQuery.data;
 
-    // 1. ОБРАБОТКА ОТКЛИКА (ПРИНЯТЬ/ОТКЛОНИТЬ)
-    if (data.startsWith("accept_") || data.startsWith("reject_")) {
-        const [action, appId] = data.split("_");
+    // Решение по отклику
+    if (data.startsWith("decision_")) {
+        const parts = data.split("_"); // decision, accept, uuid
+        const action = parts[1];
+        const appId = parts[2];
         const status = action === 'accept' ? 'accepted' : 'rejected';
 
-        // ИЗМЕРЯЕМ СКОРОСТЬ РЕАКЦИИ
-        // Сначала достаем данные об отклике, чтобы узнать время создания и детали для сообщения
-        const { data: app, error: fetchError } = await supabase
+        // 1. Получаем данные о времени создания
+        const { data: app, error } = await supabase
             .from('applications')
-            .select('created_at, candidate_name, role')
+            .select('created_at, candidate_name')
             .eq('id', appId)
             .single();
-        
-        if (fetchError || !app) {
-            return ctx.answerCallbackQuery("❌ Ошибка: отклик не найден.");
+
+        if (error || !app) {
+            return ctx.answerCallbackQuery("❌ Отклик не найден или удален.");
         }
 
-        const startTime = new Date(app.created_at).getTime();
-        const responseTimeMs = Date.now() - startTime; // Разница между "сейчас" и созданием
+        // 2. Считаем время реакции
+        const reactionTime = Date.now() - new Date(app.created_at).getTime();
 
-        // Обновляем статус и записываем время реакции в миллисекундах (как в вашем SQL)
-        const { error: updateError } = await supabase
-            .from('applications')
-            .update({
-                status: status,
-                response_time_ms: responseTimeMs
-            })
-            .eq('id', appId);
+        // 3. Обновляем статус в базе
+        await supabase.from('applications').update({ 
+            status: status,
+            response_time_ms: reactionTime
+        }).eq('id', appId);
 
-        if (!updateError) {
-            // Форматируем время для вывода (секунды и минуты)
-            const totalSeconds = Math.floor(responseTimeMs / 1000);
-            const minutes = Math.floor(totalSeconds / 60);
-            const seconds = totalSeconds % 60;
-            const timeString = minutes > 0 ? `${minutes} мин. ${seconds} сек.` : `${seconds} сек.`;
+        // 4. Обновляем сообщение в чате
+        const statusText = status === 'accepted' ? '✅ ПРИНЯТ' : '❌ ОТКЛОНЕН';
+        const minutes = Math.floor(reactionTime / 60000);
+        const seconds = Math.floor((reactionTime % 60000) / 1000);
 
-            const statusEmoji = status === 'accepted' ? '✅' : '❌';
-            const statusText = status === 'accepted' ? 'ПРИНЯТ' : 'ОТКЛОНЕН';
-
-            await ctx.editMessageText(
-                `<b>${statusEmoji} Решение принято!</b>\n\n` +
-                `👤 Кандидат: <b>${app.candidate_name}</b>\n` +
-                `💼 Роль: ${app.role}\n` +
-                `📈 Статус: <u>${statusText}</u>\n` +
-                `⏱ Скорость вашей реакции: <b>${timeString}</b>`,
-                { parse_mode: "HTML" }
-            );
-        } else {
-            console.error("Ошибка Supabase UPDATE:", updateError);
-            await ctx.answerCallbackQuery("⚠️ Ошибка обновления данных в базе.");
-        }
+        await ctx.editMessageText(
+            `🏁 <b>Решение принято</b>\n\n` +
+            `👤 Кандидат: ${app.candidate_name}\n` +
+            `📊 Статус: <b>${statusText}</b>\n` +
+            `⏱ Время реакции: ${minutes} мин ${seconds} сек`,
+            { parse_mode: "HTML" }
+        );
+        return ctx.answerCallbackQuery("Статус обновлен!");
     }
 
-    // 2. УСТАНОВКА РОЛИ ПОЛЬЗОВАТЕЛЯ (При первой регистрации)
-    if (data.startsWith("set_role_")) {
-        const role = data.replace("set_role_", "");
-        
+    // Выбор роли при старте
+    if (data.startsWith("role_")) {
+        const role = data.split("_")[1]; // candidate или hr
+        const userId = ctx.from.id;
+        const username = ctx.from.username || ctx.from.first_name;
+
         const { error } = await supabase
             .from('profiles')
-            .upsert({ 
-                user_id: ctx.from.id, 
-                role: role, 
-                username: ctx.from.username || ctx.from.first_name || "User"
-            });
+            .upsert({ user_id: userId, role: role, username: username });
 
-        if (!error) {
-            const roleTitle = role === 'hr' ? 'Рекрутер 💼' : 'Соискатель 👤';
-            await ctx.editMessageText(
-                `🎉 Вы зарегистрированы как <b>${roleTitle}</b>!\n\n` +
-                `Теперь введите /start, чтобы открыть личный кабинет или маркет вакансий.`,
-                { parse_mode: "HTML" }
-            );
-        } else {
-            console.error("Ошибка Supabase UPSERT Profile:", error);
-            await ctx.answerCallbackQuery("⚠️ Не удалось сохранить профиль.");
+        if (error) {
+            return ctx.answerCallbackQuery("Ошибка сохранения роли!");
         }
+
+        const roleName = role === 'hr' ? 'Рекрутер' : 'Соискатель';
+        await ctx.editMessageText(`✅ Вы зарегистрированы как <b>${roleName}</b>! Нажмите /start, чтобы открыть приложение.`, { parse_mode: "HTML" });
     }
 });
 
-// 4. Команда СТАРТ
+// --- КОМАНДЫ ---
 bot.command("start", async (ctx) => {
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', ctx.from.id)
-        .single();
+    // Проверяем, есть ли пользователь в базе
+    const { data: profile } = await supabase.from('profiles').select('*').eq('user_id', ctx.from.id).single();
 
-    // Если пользователя нет в базе — просим выбрать роль
     if (!profile) {
-        return ctx.reply("Привет! Это ACTIO. Кем вы являетесь?", {
+        return ctx.reply("👋 Добро пожаловать в ACTIO!\nВыберите вашу роль:", {
             reply_markup: new InlineKeyboard()
-                .text("👨‍💻 Соискатель", "set_role_candidate")
-                .text("💼 Рекрутер", "set_role_hr")
+                .text("👨‍💻 Я Соискатель", "role_candidate")
+                .text("💼 Я Рекрутер", "role_hr")
         });
     }
 
-    // Если профиль есть — даем кнопку запуска Mini App
-    ctx.reply(`Ваш статус: ${profile.role === 'hr' ? '💼 Рекрутер' : '👨‍💻 Соискатель'}.`, {
-        reply_markup: new Keyboard()
-            .webApp("ОТКРЫТЬ ACTIO", process.env.APP_URL)
-            .resized()
+    ctx.reply(`С возвращением, ${profile.username}!`, {
+        reply_markup: {
+            keyboard: [[{ text: "🚀 ОТКРЫТЬ ACTIO", web_app: { url: process.env.APP_URL } }]],
+            resize_keyboard: true
+        }
     });
 });
 
-// 5. Команда ОЧИСТКИ (Для тестов "с нуля")
-bot.command("clear", async (ctx) => {
-    try {
-        // Удаляем данные из всех таблиц (кроме системных)
-        await supabase.from('applications').delete().neq('candidate_name', 'SystemPlaceholder');
-        await supabase.from('vacancies').delete().neq('title', 'SystemPlaceholder');
-        await supabase.from('user_roles').delete().neq('role_name', 'SystemPlaceholder');
-        await supabase.from('profiles').delete().neq('username', 'SystemPlaceholder');
-        
-        ctx.reply("🚨 *БАЗА ДАННЫХ ОЧИЩЕНА*\n\nТеперь вы можете снова использовать /start для выбора роли.", { parse_mode: "Markdown" });
-    } catch (e) {
-        ctx.reply("Ошибка очистки: " + e.message);
-    }
-});
-
 // Запуск
-console.log("--- ACTIO BOT ЗАПУСКАЕТСЯ ---");
 listenToApplications();
 bot.start();
+console.log("🤖 Бот запущен...");

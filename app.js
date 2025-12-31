@@ -1,82 +1,58 @@
 const tg = window.Telegram.WebApp;
 
-// 1. ИСПРАВЛЕНИЕ: Используйте 'client', чтобы не перекрывать глобальный объект 'supabase'
-const SUPABASE_URL = "https://cgdeaibhadwsxqebohcj.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZGVhaWJoYWR3c3hxZWJvaGNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2NzQ0OTYsImV4cCI6MjA4MjI1MDQ5Nn0._JQQBh9JVswhMoxmthN2U1l-Bvs65-bSSsNdv51sPvQ"; 
+// --- НАСТРОЙКИ ---
+// Вставьте сюда ваши реальные данные из настроек Supabase
+const SUPABASE_URL = "https://cgdeaibhadwsxqebohcj.supabase.co"; 
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZGVhaWJoYWR3c3hxZWJvaGNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2NzQ0OTYsImV4cCI6MjA4MjI1MDQ5Nn0._JQQBh9JVswhMoxmthN2U1l-Bvs65-bSSsNdv51sPvQ"; // ⚠️ Вставьте сюда ANON public key
+
+// Инициализация
 const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const userId = tg.initDataUnsafe?.user?.id; // Берем ID реального юзера
 
-let userRole = 'candidate';
-let selectedVacancy = null;
-let currentSkills = []; // Для создания роли соискателя
-let vacancyTechStack = []; // Для создания вакансии HR
-const userId = tg.initDataUnsafe?.user?.id || 1205293207;
+// Глобальное состояние
+let currentUserRole = null;
+let vacancyTechStack = [];
 
+// --- СТАРТ ПРИЛОЖЕНИЯ ---
 async function init() {
     tg.expand();
-    tg.ready();
     
-    const { data: profile } = await client.from('profiles').select('role').eq('user_id', userId).single();
-    
-    if (profile) {
-        userRole = profile.role;
+    // Проверка, запущен ли апп внутри Телеграм
+    if (!userId) {
+        alert("Пожалуйста, откройте приложение через Telegram!");
+        return;
     }
 
-    updateUIByRole();
-    showPage('page-market');
-}
+    // Загружаем профиль
+    const { data: profile, error } = await client
+        .from('profiles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
 
-function updateUIByRole() {
-    const navHrBtn = document.getElementById('nav-hr-btn'); // Кнопка "Сигналы" в меню
-    const profileTab = document.querySelector('[onclick="showPage(\'page-profile\')"]'); // Вкладка Профиль
+    if (error || !profile) {
+        alert("Профиль не найден. Перезапустите бота через /start");
+        return;
+    }
 
-    if (userRole === 'hr') {
-        if (navHrBtn) navHrBtn.classList.remove('hidden');
-        // Если ты HR, тебе не нужно создавать карточки соискателя
-        // Мы можем скрыть кнопку "Добавить роль" на странице профиля
-        const addBtn = document.querySelector('button[onclick*="page-role-create"]');
-        if (addBtn) addBtn.style.display = 'none';
+    currentUserRole = profile.role;
+    console.log("Роль пользователя:", currentUserRole);
+
+    // Настраиваем интерфейс (скрываем лишнее)
+    if (currentUserRole === 'hr') {
+        // Логика для HR (если нужно что-то скрыть/показать)
     } else {
-        if (navHrBtn) navHrBtn.classList.add('hidden');
+        // Логика для Кандидата
     }
 }
 
-function updateUIByRole() {
-    const navHrBtn = document.getElementById('nav-hr-btn');
-    const createRoleBtn = document.querySelector('[onclick="showPage(\'page-role-create\')"]');
+// --- ЛОГИКА ПУБЛИКАЦИИ ВАКАНСИИ (HR) ---
 
-    if (userRole === 'hr') {
-        console.log("💼 Режим HR активен");
-        if (navHrBtn) navHrBtn.classList.remove('hidden');
-        // Прячем функционал соискателя от рекрутера, чтобы он не создавал лишних ролей
-        if (createRoleBtn) createRoleBtn.classList.add('hidden');
-    } else {
-        console.log("👤 Режим Соискателя активен");
-        if (navHrBtn) navHrBtn.classList.add('hidden');
-        if (createRoleBtn) createRoleBtn.classList.remove('hidden');
-    }
-}
-
-// --- НАВИГАЦИЯ ---
-function showPage(id) {
-    console.log("📂 Переход на страницу:", id);
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    const target = document.getElementById(id);
-    if (target) target.classList.add('active');
-
-    // Сброс прозрачности кнопок навигации
-    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.add('opacity-40'));
-
-    // Авто-загрузка данных
-    if (id === 'page-market') loadMarket();
-    if (id === 'page-profile') { loadUserRoles(); loadMyApplications(); }
-    if (id === 'page-hr') loadMyVacancies();
-
-    tg.HapticFeedback.impactOccurred('light');
-}
-
-// --- ЛОГИКА HR (ВАКАНСИИ) ---
+// Добавление тега
 function addTechTag() {
-    const input = document.getElementById('v-stack-input');
+    const input = document.getElementById('v-tech-input');
+    if (!input) return;
+    
     const tag = input.value.trim();
     if (tag && !vacancyTechStack.includes(tag)) {
         vacancyTechStack.push(tag);
@@ -85,98 +61,74 @@ function addTechTag() {
     }
 }
 
-function renderTechTags() {
-    const container = document.getElementById('v-tech-list');
-    if (!container) return;
-    container.innerHTML = vacancyTechStack.map((t, i) => `
-        <div class="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/30 rounded-xl">
-            <span class="text-[10px] font-black text-primary uppercase">${t}</span>
-            <button onclick="removeTechTag(${i})" class="material-symbols-outlined text-sm">close</button>
-        </div>
-    `).join('');
-}
-
+// Удаление тега
 function removeTechTag(index) {
     vacancyTechStack.splice(index, 1);
     renderTechTags();
 }
 
+// Отрисовка тегов
+function renderTechTags() {
+    const container = document.getElementById('v-tech-list');
+    if (!container) return;
+
+    container.innerHTML = vacancyTechStack.map((t, i) => `
+        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+            ${t}
+            <button onclick="removeTechTag(${i})" class="ml-1 hover:text-red-500">✕</button>
+        </span>
+    `).join('');
+}
+
+// Отправка формы в базу
 async function publishVacancy() {
+    // 1. Собираем данные
     const title = document.getElementById('v-title').value.trim();
     const city = document.getElementById('v-city').value.trim();
-    const level = document.getElementById('v-level').value;
+    const desc = document.getElementById('v-desc').value.trim();
+    
+    // Получаем значение радио-кнопки
+    const levelEl = document.querySelector('input[name="level"]:checked');
+    const level = levelEl ? levelEl.value : 'Middle';
+
     const sMin = document.getElementById('v-salary-min').value;
     const sMax = document.getElementById('v-salary-max').value;
-    const desc = document.getElementById('v-desc').value.trim();
-    const stackInput = document.getElementById('v-stack-input').value.trim();
+    const currency = document.getElementById('v-currency').value;
 
-    // 1. ПРОВЕРКА РОЛИ (Самое важное!)
-    if (userRole !== 'hr') {
-        console.error("Ошибка прав: Текущая роль -", userRole);
-        return tg.showAlert("Ошибка доступа: В базе вы не числитесь как HR. Нажмите /start в боте и выберите 'Рекрутер'");
-    }
+    // 2. Валидация
+    if (!title) return tg.showAlert("Введите название вакансии!");
+    if (vacancyTechStack.length === 0) return tg.showAlert("Добавьте хотя бы один тег стека!");
 
-    if (!title) return tg.showAlert("Введите название позиции!");
-
-    // 2. АВТО-СТЕК: если массив пуст, берем текст из инпута
-    let finalStack = vacancyTechStack;
-    if (finalStack.length === 0 && stackInput) {
-        finalStack = stackInput.split(',').map(s => s.trim());
-    }
+    // 3. Отправка
+    tg.MainButton.showProgress();
     
-    if (finalStack.length === 0) return tg.showAlert("Укажите стек технологий!");
-
-    // 3. ОТПРАВКА (Используем client!)
-    const { data, error } = await client.from('vacancies').insert([{
-        hr_id: userId,
+    const { error } = await client.from('vacancies').insert([{
+        hr_id: userId, // ВАЖНО: ID текущего юзера
         title: title,
-        city: city || 'Remote',
+        city: city,
         level: level,
-        salary_min: parseInt(sMin) || 0,
-        salary_max: parseInt(sMax) || 0,
-        tech_stack: finalStack,
-        description: desc,
-        currency: '₽'
-    }]).select();
+        salary_min: sMin ? parseInt(sMin) : null,
+        salary_max: sMax ? parseInt(sMax) : null,
+        currency: currency,
+        tech_stack: vacancyTechStack,
+        description: desc
+    }]);
+
+    tg.MainButton.hideProgress();
 
     if (error) {
-        console.error("Supabase Error:", error);
-        tg.showAlert("Ошибка базы: " + error.message);
+        console.error(error);
+        tg.showAlert("Ошибка при создании: " + error.message);
     } else {
-        tg.HapticFeedback.notificationOccurred('success');
-        tg.showAlert("🚀 Сигнал опубликован!");
+        tg.showAlert("✅ Вакансия успешно опубликована!");
+        // Очистка формы
+        document.getElementById('v-title').value = "";
+        document.getElementById('v-desc').value = "";
         vacancyTechStack = [];
-        showPage('page-market');
+        renderTechTags();
+        // Можно добавить редирект: window.location.href = 'index.html';
     }
 }
 
-// --- ЛОГИКА СОИСКАТЕЛЯ (РОЛИ) ---
-async function loadUserRoles() {
-    const container = document.getElementById('user-roles-list');
-    // ВАЖНО: фильтруем строго по userId, чтобы соискатель видел только СВОИ роли
-    const { data, error } = await client
-        .from('user_roles')
-        .select('*')
-        .eq('user_id', userId);
-    
-    if (data) {
-        container.innerHTML = data.map(r => `
-            <div class="p-5 bg-surface-dark border border-border-dark rounded-2xl shadow-lg mb-3">
-                <div class="font-black italic uppercase tracking-tighter text-sm mb-1">${r.role_name}</div>
-                <div class="text-[9px] opacity-40 font-bold uppercase tracking-widest">${(r.skills || []).join(', ')}</div>
-            </div>
-        `).join('');
-    } else {
-        container.innerHTML = `<p class="text-xs opacity-20 text-center py-4">У вас пока нет созданных ролей</p>`;
-    }
-}
-
-// ... (остальные функции loadMarket, loadMyApplications, loadMyVacancies оставить как есть, но убедиться в использовании 'client' вместо 'supabase')
-
-async function saveRole() {
-    const name = document.getElementById('role-name').value.trim();
-    // ... логика сохранения роли ...
-    // Обязательно добавьте .eq('user_id', userId) в фильтры
-}
-
-init();
+// Запуск при загрузке страницы
+document.addEventListener('DOMContentLoaded', init);
