@@ -2,7 +2,7 @@ const tg = window.Telegram.WebApp;
 const SUPABASE_URL = "https://cgdeaibhadwsxqebohcj.supabase.co";
 // Вставьте ваш ACTUAL ANON KEY из настроек Supabase (Settings -> API)
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZGVhaWJoYWR3c3hxZWJvaGNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2NzQ0OTYsImV4cCI6MjA4MjI1MDQ5Nn0._JQQBh9JVswhMoxmthN2U1l-Bvs65-bSSsNdv51sPvQ"; 
-const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let userRole = 'candidate';
 let selectedVacancy = null;
@@ -36,18 +36,59 @@ async function loadMarket() {
     const list = document.getElementById('vacancies-list');
     list.innerHTML = `<p class='text-center py-10 opacity-50 italic'>Загрузка вакансий...</p>`;
     
-    const { data, error } = await client.from('vacancies').select('*').order('created_at', { ascending: false });
+    // Подгружаем все поля из новой структуры
+    const { data, error } = await client
+        .from('vacancies')
+        .select('*')
+        .order('created_at', { ascending: false });
     
-    if (data) {
-        list.innerHTML = data.map(v => `
-            <div onclick="openVacancyDetails('${v.id}')" class="bg-surface-dark p-5 rounded-2xl border border-border-dark active:scale-[0.98] transition-all">
-                <h3 class="text-lg font-bold italic">${v.title}</h3>
-                <div class="flex justify-between items-center mt-3 text-[10px] text-gray-400 uppercase tracking-widest">
-                    <span>${v.city || 'Удаленно'}</span>
-                    <span class="text-primary font-bold">${v.salary_min} ₽</span>
+    if (error) {
+        list.innerHTML = `<p class='text-center py-10 text-red-400'>Ошибка: ${error.message}</p>`;
+        return;
+    }
+
+    if (data && data.length > 0) {
+        list.innerHTML = data.map(v => {
+            // Форматируем отображение зарплаты
+            const salaryText = v.salary_min 
+                ? `${v.salary_min.toLocaleString()}${v.salary_max ? ' — ' + v.salary_max.toLocaleString() : ''}`
+                : 'З/П не указана';
+
+            // Генерируем HTML для стека технологий (tech_stack — это массив в SQL)
+            const stackHtml = (v.tech_stack || [])
+                .map(s => `<span class="bg-white/5 px-2 py-0.5 rounded text-[9px] border border-white/10">${s}</span>`)
+                .join('');
+
+            return `
+                <div onclick="openVacancyDetails('${v.id}')" class="bg-surface-dark p-5 rounded-2xl border border-border-dark active:scale-[0.98] transition-all mb-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="px-2 py-1 bg-primary/10 text-primary text-[10px] rounded-lg uppercase font-black">
+                            ${v.level || 'Middle'}
+                        </span>
+                        <span class="text-[10px] opacity-40 uppercase tracking-tighter">${v.format || 'Full-time'}</span>
+                    </div>
+
+                    <h3 class="text-xl font-bold italic leading-tight mb-2">${v.title}</h3>
+
+                    <div class="flex flex-wrap gap-1 mb-4">
+                        ${stackHtml}
+                    </div>
+
+                    <div class="flex justify-between items-end border-t border-white/5 pt-3">
+                        <div class="text-[10px] text-gray-400 uppercase tracking-widest flex flex-col">
+                            <span class="opacity-50">Локация</span>
+                            <span class="text-gray-200 mt-1">📍 ${v.city || 'Удаленно'}</span>
+                        </div>
+                        <div class="text-right flex flex-col">
+                            <span class="text-[10px] text-primary uppercase font-bold tracking-widest opacity-50">Оплата</span>
+                            <span class="text-primary font-black text-sm mt-1">${salaryText} ${v.currency || '₽'}</span>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
+    } else {
+        list.innerHTML = `<p class='text-center py-10 opacity-30 italic'>Вакансий пока нет...</p>`;
     }
 }
 
@@ -76,6 +117,7 @@ async function openRoleSheet() {
     document.getElementById('overlay').classList.remove('hidden');
     document.getElementById('role-sheet').classList.add('active');
 
+    // Если вы переименовали client в supabase в начале файла, используйте supabase.from
     const { data: roles } = await client.from('user_roles').select('*').eq('user_id', userId);
 
     if (roles && roles.length > 0) {
@@ -84,7 +126,7 @@ async function openRoleSheet() {
                 <input type="radio" name="selected-role" value="${r.role_name}" class="peer hidden">
                 <div class="p-4 bg-surface-dark border border-border-dark rounded-xl peer-checked:border-primary peer-checked:bg-primary/10">
                     <div class="font-bold">${r.role_name}</div>
-                    <div class="text-xs opacity-40">${r.skills.join(', ')}</div>
+                    <div class="text-xs opacity-40">${r.skills?.join(', ') || 'Навыки не указаны'}</div>
                 </div>
             </label>
         `).join('');
@@ -118,24 +160,36 @@ async function confirmApply() {
 
 // --- СОЗДАНИЕ ВАКАНСИИ (HR) ---
 async function publishVacancy() {
-    const title = document.getElementById('v-title').value.trim();
-    const city = document.getElementById('v-city').value.trim();
-    const salary = document.getElementById('v-salary-min').value;
-    const desc = document.getElementById('v-desc').value.trim();
+    const title = document.getElementById('vac-title').value;
+    const city = document.getElementById('vac-city').value;
+    const level = document.getElementById('vac-level').value; // junior/middle/senior
+    const format = document.getElementById('vac-format').value; // remote/office
+    const salaryMin = document.getElementById('vac-salary-min').value;
+    const salaryMax = document.getElementById('vac-salary-max').value;
+    const techStack = document.getElementById('vac-stack').value; // "JS, Node, Postgres"
+    const description = document.getElementById('vac-desc').value;
 
-    if (!title) return tg.showAlert("Укажите название!");
+    if(!title) return alert("Введите название вакансии");
 
-    const { error } = await client.from('vacancies').insert([{
+    const { error } = await supabase.from('vacancies').insert({
         hr_id: userId,
-        title, city, 
-        salary_min: parseInt(salary),
-        description: desc
-    }]);
+        title: title,
+        city: city,
+        level: level,
+        format: format,
+        salary_min: parseInt(salaryMin) || 0,
+        salary_max: parseInt(salaryMax) || 0,
+        currency: '₽',
+        tech_stack: techStack.split(',').map(s => s.trim()).filter(s => s !== ""),
+        description: description
+    });
 
     if (!error) {
-        tg.showAlert("Вакансия опубликована!");
-        showPage('page-market');
-        loadMarket();
+        alert("Вакансия опубликована!");
+        showPage('page-hr');
+        loadMyVacancies();
+    } else {
+        alert("Ошибка: " + error.message);
     }
 }
 
