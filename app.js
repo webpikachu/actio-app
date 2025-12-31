@@ -1,3 +1,13 @@
+const DEBUG = true;
+
+function log(...args) {
+  if (DEBUG) console.log("🧠 [Actio]", ...args);
+}
+
+function errorLog(...args) {
+  console.error("❌ [Actio]", ...args);
+}
+
 /* ==============================
    TELEGRAM INIT
 ================================ */
@@ -11,6 +21,8 @@ tg.expand();
 const SUPABASE_URL = "https://cgdeaibhadwsxqebohcj.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZGVhaWJoYWR3c3hxZWJvaGNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2NzQ0OTYsImV4cCI6MjA4MjI1MDQ5Nn0._JQQBh9JVswhMoxmthN2U1l-Bvs65-bSSsNdv51sPvQ";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+log("Supabase URL:", SUPABASE_URL);
+log("Supabase client initialized");
 
 /* ==============================
    USER CONTEXT
@@ -28,50 +40,63 @@ const roleBadge = document.getElementById("user-role-badge");
    APP BOOTSTRAP
 ================================ */
 document.addEventListener("DOMContentLoaded", async () => {
+  log("App loaded");
+
+  log("Telegram initData:", tg.initDataUnsafe);
+
   if (!currentUserId) {
+    errorLog("No Telegram user ID");
     if (roleBadge) roleBadge.innerText = "Не в Telegram";
     return;
   }
 
+  log("Current user ID:", currentUserId);
+
   await checkUserRole(currentUserId);
 
-  // Возврат из roles.html
-  const roleId = sessionStorage.getItem("selected_role_id");
-  const vacancyId = sessionStorage.getItem("selected_vacancy_id");
-
-  if (roleId && vacancyId) {
-    sessionStorage.removeItem("selected_role_id");
-    sessionStorage.removeItem("selected_vacancy_id");
-    await applyForVacancyWithRole(vacancyId, roleId);
-    return;
+  if (feedContainer) {
+    log("Loading vacancies…");
+    loadVacancies();
   }
-
-  if (feedContainer) loadVacancies();
 });
+
 
 /* ==============================
    ROLE CHECK
 ================================ */
 async function checkUserRole(userId) {
-  const { data, error } = await supabaseClient
+  log("Checking user role for:", userId);
+
+  const { data: profile, error } = await supabaseClient
     .from("profiles")
     .select("role")
     .eq("user_id", userId)
     .single();
 
-  if (error || !data) {
+  if (error) {
+    errorLog("Role check error:", error);
+    if (roleBadge) roleBadge.innerText = "Ошибка профиля";
+    return;
+  }
+
+  log("User profile:", profile);
+
+  if (!profile) {
+    log("Profile not found");
     if (roleBadge) roleBadge.innerText = "Гость";
     return;
   }
 
   if (roleBadge) {
-    roleBadge.innerText = data.role === "hr" ? "Рекрутер" : "Соискатель";
+    roleBadge.innerText = profile.role === "hr" ? "Рекрутер" : "Соискатель";
   }
 
-  if (data.role === "hr" && createBtn) {
+  if (profile.role === "hr" && createBtn) {
+    log("HR detected, showing create button");
     createBtn.classList.remove("hidden");
   }
 }
+
 
 /* ==============================
    LOAD VACANCIES
@@ -80,7 +105,9 @@ async function loadVacancies() {
   if (!feedContainer) return;
 
   feedContainer.innerHTML =
-    '<div class="text-center mt-10 text-gray-500">Загрузка...</div>';
+    '<div class="text-center mt-10 text-gray-500">Загрузка вакансий…</div>';
+
+  log("Requesting vacancies from Supabase");
 
   const { data, error } = await supabaseClient
     .from("vacancies")
@@ -88,11 +115,19 @@ async function loadVacancies() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    feedContainer.innerText = "Ошибка: " + error.message;
+    errorLog("Vacancies load error:", error);
+    feedContainer.innerHTML = `
+      <div class="text-center mt-10 text-red-500">
+        ❌ Ошибка загрузки вакансий<br/>
+        <span class="text-xs">${error.message}</span>
+      </div>`;
     return;
   }
 
+  log("Vacancies response:", data);
+
   if (!data || data.length === 0) {
+    log("Vacancies list is empty");
     feedContainer.innerHTML = `
       <div class="flex flex-col items-center justify-center h-64 text-gray-400">
         <span class="text-4xl mb-2">📭</span>
@@ -101,41 +136,22 @@ async function loadVacancies() {
     return;
   }
 
-  feedContainer.innerHTML = data
-    .map(
-      (v) => `
-    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow border border-gray-100 dark:border-gray-700">
-      <h3 class="font-bold text-lg">${escapeHtml(v.title)}</h3>
-
-      <div class="flex justify-between text-sm text-gray-500 mt-1">
-        <span>📍 ${escapeHtml(v.city || "Удаленно")}</span>
-        <span class="font-semibold text-green-600">
-          ${v.salary_min || "—"} ${v.currency || ""}
-        </span>
+  feedContainer.innerHTML = data.map(v => `
+    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow">
+      <h3 class="font-bold text-lg">${v.title}</h3>
+      <div class="text-sm text-gray-500 mt-1">
+        ${v.city || "Удаленно"}
       </div>
-
-      <div class="mt-3 flex flex-wrap gap-2">
-        ${(v.tech_stack || [])
-          .map(
-            (tag) =>
-              `<span class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 text-xs rounded-md">${escapeHtml(
-                tag
-              )}</span>`
-          )
-          .join("")}
-      </div>
-
       <button
-        onclick="openRolesForVacancy('${v.id}')"
-        class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition active:scale-95"
+        onclick="openVacancy('${v.id}')"
+        class="mt-3 w-full bg-blue-600 text-white py-2 rounded-lg"
       >
-        Откликнуться
+        Подробнее
       </button>
     </div>
-  `
-    )
-    .join("");
+  `).join("");
 }
+
 
 /* ==============================
    OPEN ROLES SELECTOR
@@ -305,3 +321,11 @@ function formatLeft(ms) {
     "0"
   )}:${String(s).padStart(2, "0")}`;
 }
+
+window.addEventListener("error", (e) => {
+  errorLog("Global JS error:", e.message, e.filename, e.lineno);
+});
+
+window.addEventListener("unhandledrejection", (e) => {
+  errorLog("Unhandled promise rejection:", e.reason);
+});
