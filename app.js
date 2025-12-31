@@ -1,87 +1,174 @@
 const tg = window.Telegram.WebApp;
-tg.expand();
+tg.expand(); // Раскрыть на весь экран
 
-// --- ВСТАВЬ СВОИ ДАННЫЕ НИЖЕ ---
+// --- НАСТРОЙКИ (ВСТАВЬ СВОИ ДАННЫЕ!) ---
 const SUPABASE_URL = "https://твоя-ссылка.supabase.co"; 
-const SUPABASE_KEY = "твой-anon-ключ";
-// -------------------------------
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZGVhaWJoYWR3c3hxZWJvaGNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2NzQ0OTYsImV4cCI6MjA4MjI1MDQ5Nn0._JQQBh9JVswhMoxmthN2U1l-Bvs65-bSSsNdv51sPvQ";
+// ---------------------------------------
 
-const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const userId = tg.initDataUnsafe?.user?.id; // Telegram ID
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const currentUserId = tg.initDataUnsafe?.user?.id; 
 
-// Элементы UI
-const statusEl = document.getElementById('user-status');
-const createBtn = document.getElementById('btn-create');
-const feedEl = document.getElementById('vacancy-feed');
+// Элементы интерфейса
+const feedContainer = document.getElementById('vacancy-feed');
+const createBtn = document.getElementById('nav-create-btn');
+const roleBadge = document.getElementById('user-role-badge');
 
-async function init() {
-    // 1. Если открыто не в Telegram
-    if (!userId) {
-        statusEl.innerText = "⚠️ Открой в Telegram";
-        statusEl.classList.add('text-red-500');
+// --- ЗАПУСК ПРИЛОЖЕНИЯ ---
+document.addEventListener('DOMContentLoaded', async () => {
+    
+    // 1. Проверка окружения
+    if (!currentUserId) {
+        if(roleBadge) roleBadge.innerText = "Не в Telegram";
+        // Для тестов в браузере раскомментируй строку ниже и вставь свой ID:
+        // checkUserRole(123456789); 
         return;
     }
 
-    statusEl.innerText = `ID: ${userId} (Проверка...)`;
+    // 2. Проверка роли пользователя
+    await checkUserRole(currentUserId);
 
-    // 2. Получаем роль из базы
-    const { data: profile, error } = await client
-        .from('profiles')
-        .select('role')
-        .eq('user_id', userId)
-        .single();
-
-    if (error) {
-        console.error("Ошибка профиля:", error);
-        statusEl.innerText = `Ошибка: ${error.message}`;
-        // Для ТЕСТА: Если профиля нет, покажем кнопку все равно (чтобы ты увидел её)
-        // createBtn.classList.remove('hide'); 
-        return;
+    // 3. Загрузка ленты вакансий
+    // (Если мы на главной странице)
+    if (feedContainer) {
+        loadVacancies();
     }
+});
 
-    // 3. Логика отображения
-    if (profile && profile.role === 'hr') {
-        statusEl.innerText = "✅ Роль: Рекрутер";
-        statusEl.classList.add('text-green-500');
-        createBtn.classList.remove('hide'); // ПОКАЗЫВАЕМ КНОПКУ "+"
-    } else {
-        statusEl.innerText = "👤 Роль: Соискатель";
-        createBtn.classList.add('hide');
+// --- ФУНКЦИЯ ПРОВЕРКИ РОЛИ ---
+async function checkUserRole(userId) {
+    try {
+        const { data: profile, error } = await supabaseClient
+            .from('profiles')
+            .select('role')
+            .eq('user_id', userId)
+            .single();
+
+        if (error || !profile) {
+            console.warn("Профиль не найден или ошибка", error);
+            if(roleBadge) roleBadge.innerText = "Гость";
+            return;
+        }
+
+        // Обновляем бейдж
+        if(roleBadge) roleBadge.innerText = profile.role === 'hr' ? "Рекрутер" : "Соискатель";
+
+        // ГЛАВНОЕ: Если HR, показываем кнопку создания
+        if (profile.role === 'hr' && createBtn) {
+            createBtn.classList.remove('hidden');
+        }
+
+    } catch (err) {
+        console.error("Ошибка проверки роли:", err);
     }
-
-    // 4. Загружаем вакансии
-    loadVacancies();
 }
 
+// --- ЗАГРУЗКА ВАКАНСИЙ (ДЛЯ INDEX.HTML) ---
 async function loadVacancies() {
-    feedEl.innerHTML = '<div class="text-center text-gray-500 mt-10">Загрузка...</div>';
-    
-    const { data: vacancies, error } = await client
+    if (!feedContainer) return;
+
+    feedContainer.innerHTML = '<div class="text-center mt-10 text-gray-500">Обновление...</div>';
+
+    const { data: vacancies, error } = await supabaseClient
         .from('vacancies')
         .select('*')
         .order('created_at', { ascending: false });
 
-    if (error || !vacancies.length) {
-        feedEl.innerHTML = '<div class="text-center text-gray-500 mt-10">Вакансий пока нет</div>';
+    if (error) {
+        feedContainer.innerText = "Ошибка загрузки: " + error.message;
         return;
     }
 
-    feedEl.innerHTML = vacancies.map(v => `
-        <div class="bg-white dark:bg-gray-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800">
-            <h3 class="font-bold text-lg">${v.title}</h3>
-            <div class="text-sm text-gray-500 flex justify-between mt-1">
-                <span>${v.city || 'Remote'}</span>
-                <span class="text-blue-500 font-semibold">${v.salary_min ? v.salary_min : ''} ${v.currency || ''}</span>
+    if (!vacancies || vacancies.length === 0) {
+        feedContainer.innerHTML = `
+            <div class="flex flex-col items-center justify-center h-64 text-gray-400">
+                <span class="text-4xl mb-2">📭</span>
+                <p>Ваши вакансии будут здесь</p>
+            </div>`;
+        return;
+    }
+
+    // Рендеринг списка
+    feedContainer.innerHTML = vacancies.map(v => `
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow border border-gray-100 dark:border-gray-700">
+            <h3 class="font-bold text-lg text-gray-900 dark:text-white">${v.title}</h3>
+            
+            <div class="flex justify-between text-sm text-gray-500 mt-1">
+                <span>📍 ${v.city || 'Удаленно'}</span>
+                <span class="font-semibold text-green-600">${v.salary_min ? v.salary_min : '$$$'} ${v.currency}</span>
             </div>
+
             <div class="mt-3 flex flex-wrap gap-2">
-                ${(v.tech_stack || []).map(tag => `<span class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-0.5 rounded text-xs">${tag}</span>`).join('')}
+                ${(v.tech_stack || []).map(tag => 
+                    `<span class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 text-xs rounded-md">${tag}</span>`
+                ).join('')}
             </div>
-            <button onclick="tg.showAlert('Отклик пока в разработке')" class="mt-4 w-full bg-gray-100 dark:bg-gray-800 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+
+            <button onclick="applyForVacancy('${v.id}', '${v.title}', '${v.hr_id}')" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition active:scale-95">
                 Откликнуться
             </button>
         </div>
     `).join('');
 }
 
-// Запуск
-document.addEventListener('DOMContentLoaded', init);
+// --- ОТКЛИК НА ВАКАНСИЮ ---
+async function applyForVacancy(vacancyId, vacancyTitle, hrId) {
+    if (!confirm(`Отправить отклик на "${vacancyTitle}"?`)) return;
+
+    tg.MainButton.showProgress();
+
+    // Берем имя из Телеграм
+    const candidateName = (tg.initDataUnsafe?.user?.first_name || "Кандидат") + " " + (tg.initDataUnsafe?.user?.username || "");
+
+    const { error } = await supabaseClient
+        .from('applications')
+        .insert([{
+            vacancy_id: vacancyId,
+            hr_id: hrId,
+            candidate_id: currentUserId,
+            candidate_name: candidateName,
+            role: vacancyTitle,
+            status: 'pending'
+        }]);
+
+    tg.MainButton.hideProgress();
+
+    if (error) {
+        tg.showAlert("Ошибка: " + error.message);
+    } else {
+        tg.showAlert("✅ Отклик отправлен! Рекрутер получит уведомление.");
+    }
+}
+
+// --- ПУБЛИКАЦИЯ ВАКАНСИИ (ДЛЯ PUBLISH.HTML) ---
+// Эту функцию вызывать из publish.html
+async function publishVacancyGlobal() {
+    const title = document.getElementById('v-title').value;
+    const city = document.getElementById('v-city').value;
+    const desc = document.getElementById('v-desc').value;
+    // Предполагаем, что стек собирается в глобальную переменную vacancyTechStack (из прошлого кода)
+    // Для простоты здесь берем хардкод или нужно добавить логику инпута
+    
+    if(!title) return tg.showAlert("Нужен заголовок!");
+
+    tg.MainButton.showProgress();
+
+    const { error } = await supabaseClient.from('vacancies').insert([{
+        hr_id: currentUserId,
+        title: title,
+        city: city,
+        description: desc,
+        tech_stack: window.vacancyTechStack || ['General'], // Защита от пустого массива
+        salary_min: document.getElementById('v-salary-min')?.value || 0,
+        currency: '₽'
+    }]);
+
+    tg.MainButton.hideProgress();
+
+    if (error) {
+        tg.showAlert("Ошибка: " + error.message);
+    } else {
+        tg.showAlert("Вакансия опубликована!");
+        window.location.href = 'index.html';
+    }
+}
