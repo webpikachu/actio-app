@@ -2,147 +2,96 @@
 <html class="dark" lang="ru">
 <head>
     <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
     <title>Actio - Разместить вакансию</title>
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-
-    <script id="tailwind-config">
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            colors: {
-              "primary": "#0d7ff2",
-              "background-light": "#f2f2f7",
-              "background-dark": "#000000",
-              "surface-light": "#ffffff",
-              "surface-dark": "#1c1c1e",
-              "border-dark": "#3a3a3c",
-            },
-            fontFamily: { "display": ["Inter", "sans-serif"] }
-          }
-        }
-      }
-    </script>
     
     <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Скрытие скроллбара */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        input[type="radio"]:checked + div { background-color: #0d7ff2; color: white; border-color: #0d7ff2; }
+        /* Стили радиокнопок */
+        input[type="radio"]:checked + div { @apply bg-blue-600 text-white ring-2 ring-blue-600; }
     </style>
 </head>
 
-<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white antialiased overflow-hidden">
+<body class="bg-gray-100 dark:bg-black text-gray-900 dark:text-white h-screen flex flex-col">
 
-<div class="relative flex flex-col h-screen overflow-hidden">
-    <header class="flex-none bg-surface-light dark:bg-surface-dark border-b border-slate-200 dark:border-border-dark px-4 py-3 z-20">
-        <div class="flex items-center justify-between">
-            <button onclick="window.location.href='index.html'" class="flex items-center justify-center w-10 h-10 -ml-2 text-primary active:opacity-70 rounded-full">
-                <span class="material-symbols-outlined text-[28px]">close</span>
-            </button>
-            <h1 class="text-[17px] font-semibold text-center flex-1 truncate pr-4">Разместить Вакансию</h1>
-            <div id="header-actions" class="flex gap-2"></div>
-        </div>
+    <header class="flex-none px-4 py-3 flex items-center bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+        <button onclick="window.history.back()" class="mr-4 text-blue-500">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+        </button>
+        <h1 class="text-lg font-bold">Новая вакансия</h1>
     </header>
 
-    <main class="flex-1 overflow-y-auto no-scrollbar pb-32">
-        <div class="px-4 pt-6 pb-2 space-y-5">
-            
-            <div class="space-y-2">
-                <label class="block text-[13px] uppercase tracking-wide text-slate-400 font-medium ml-1">Основная информация</label>
-                <div class="bg-surface-light dark:bg-surface-dark rounded-xl overflow-hidden border border-slate-200 dark:border-none shadow-sm">
-                    <div class="relative border-b border-slate-200 dark:border-border-dark">
-                        <input id="v-title" class="w-full bg-transparent border-none focus:ring-0 text-base py-4 px-4 h-14" placeholder="Название (напр. UI/UX Designer)" type="text"/>
-                    </div>
-                    <div class="relative">
-                        <input id="v-city" class="w-full bg-transparent border-none focus:ring-0 text-base py-4 px-4 h-14" placeholder="Город (напр. Лиссабон)" type="text"/>
-                        <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">location_on</span>
-                    </div>
-                </div>
+    <main class="flex-1 overflow-y-auto no-scrollbar p-4 space-y-6">
+        
+        <div class="space-y-4">
+            <div class="bg-white dark:bg-gray-900 rounded-xl p-3 shadow-sm space-y-3">
+                <input id="v-title" class="w-full bg-transparent border-b border-gray-200 dark:border-gray-800 py-2 focus:outline-none" placeholder="Название (напр. Frontend Dev)" type="text"/>
+                <input id="v-city" class="w-full bg-transparent py-2 focus:outline-none" placeholder="Город (напр. Москва / Remote)" type="text"/>
             </div>
-
-            <div class="space-y-2">
-                <label class="block text-[13px] uppercase tracking-wide text-slate-400 font-medium ml-1">Уровень</label>
-                <div class="bg-slate-200 dark:bg-[#2c2c2e] p-1 rounded-lg flex text-sm font-medium">
-                    <label class="flex-1 cursor-pointer"><input class="sr-only peer" name="level" type="radio" value="junior"/><div class="py-1.5 text-center rounded-[6px] peer-checked:bg-white dark:peer-checked:bg-[#636366] transition-all">Junior</div></label>
-                    <label class="flex-1 cursor-pointer"><input checked class="sr-only peer" name="level" type="radio" value="middle"/><div class="py-1.5 text-center rounded-[6px] peer-checked:bg-white dark:peer-checked:bg-[#636366] transition-all">Middle</div></label>
-                    <label class="flex-1 cursor-pointer"><input class="sr-only peer" name="level" type="radio" value="senior"/><div class="py-1.5 text-center rounded-[6px] peer-checked:bg-white dark:peer-checked:bg-[#636366] transition-all">Senior</div></label>
-                </div>
-            </div>
-
-            <div class="space-y-2">
-                <label class="block text-[13px] uppercase tracking-wide text-slate-400 font-medium ml-1">Зарплата (в месяц)</label>
-                <div class="flex gap-3">
-                    <div class="flex-1 relative">
-                        <input id="v-salary-min" class="w-full bg-surface-light dark:bg-surface-dark border-none focus:ring-2 focus:ring-primary rounded-xl h-12 pl-4" placeholder="От" type="number"/>
-                    </div>
-                    <div class="flex-1 relative">
-                        <input id="v-salary-max" class="w-full bg-surface-light dark:bg-surface-dark border-none focus:ring-2 focus:ring-primary rounded-xl h-12 pl-4" placeholder="До" type="number"/>
-                    </div>
-                    <div class="w-20">
-                        <select id="v-currency" class="w-full bg-surface-light dark:bg-surface-dark border-none focus:ring-2 focus:ring-primary rounded-xl h-12 text-center font-medium appearance-none">
-                            <option value="₽">₽</option>
-                            <option value="$">$</option>
-                            <option value="€">€</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <div class="space-y-2">
-                <label class="block text-[13px] uppercase tracking-wide text-slate-400 font-medium ml-1">Стек технологий</label>
-                <div class="bg-surface-light dark:bg-surface-dark rounded-xl p-3 border border-slate-200 dark:border-none min-h-[56px] flex flex-wrap gap-2 items-center">
-                    <div id="v-tech-list" class="flex flex-wrap gap-2">
-                        </div>
-                    <input id="v-tech-input" onkeydown="if(event.key==='Enter') addTechTag()" class="flex-1 min-w-[100px] bg-transparent border-none focus:ring-0 text-base p-1" placeholder="Добавить..." type="text"/>
-                </div>
-            </div>
-
-            <div class="space-y-2">
-                <label class="block text-[13px] uppercase tracking-wide text-slate-400 font-medium ml-1">Описание вакансии</label>
-                <textarea id="v-desc" class="w-full bg-surface-light dark:bg-surface-dark border-none focus:ring-0 rounded-xl text-base p-4 min-h-[160px] resize-none" placeholder="Требования и условия..."></textarea>
-            </div>
-            
-            <div class="h-10"></div>
         </div>
-    </main>
 
-    <footer class="absolute bottom-0 left-0 right-0 bg-surface-light/90 dark:bg-surface-dark/90 backdrop-blur-md border-t border-slate-200 dark:border-border-dark p-4 z-30 pb-8">
-        <button onclick="publishVacancy()" id="publish-btn" class="w-full bg-primary hover:bg-blue-600 active:scale-[0.98] transition-all text-white font-semibold h-12 rounded-xl text-[17px] shadow-lg">
-            Опубликовать Вакансию
+        <div>
+            <label class="text-xs uppercase text-gray-500 font-semibold ml-1">Уровень</label>
+            <div class="mt-2 flex gap-2 bg-gray-200 dark:bg-gray-800 p-1 rounded-lg">
+                <label class="flex-1 cursor-pointer">
+                    <input class="sr-only" name="level" type="radio" value="Junior"/>
+                    <div class="text-center py-2 rounded-md text-sm transition-all bg-transparent">Jun</div>
+                </label>
+                <label class="flex-1 cursor-pointer">
+                    <input class="sr-only" name="level" type="radio" value="Middle" checked/>
+                    <div class="text-center py-2 rounded-md text-sm transition-all bg-white dark:bg-gray-700 shadow-sm">Mid</div>
+                </label>
+                <label class="flex-1 cursor-pointer">
+                    <input class="sr-only" name="level" type="radio" value="Senior"/>
+                    <div class="text-center py-2 rounded-md text-sm transition-all bg-transparent">Sen</div>
+                </label>
+            </div>
+        </div>
+
+        <div>
+            <label class="text-xs uppercase text-gray-500 font-semibold ml-1">Зарплата</label>
+            <div class="mt-2 flex gap-3">
+                <input id="v-salary-min" type="number" class="flex-1 bg-white dark:bg-gray-900 rounded-xl p-3 focus:outline-none" placeholder="От"/>
+                <input id="v-salary-max" type="number" class="flex-1 bg-white dark:bg-gray-900 rounded-xl p-3 focus:outline-none" placeholder="До"/>
+                <select id="v-currency" class="w-16 bg-white dark:bg-gray-900 rounded-xl p-3 focus:outline-none text-center">
+                    <option value="₽">₽</option>
+                    <option value="$">$</option>
+                    <option value="€">€</option>
+                </select>
+            </div>
+        </div>
+
+        <div>
+            <label class="text-xs uppercase text-gray-500 font-semibold ml-1">Стек технологий</label>
+            <div class="mt-2 bg-white dark:bg-gray-900 rounded-xl p-3 min-h-[60px]">
+                <div id="v-tech-list" class="flex flex-wrap gap-2 mb-2">
+                    </div>
+                <input id="v-tech-input" onkeydown="if(event.key==='Enter') addTechTag()" class="w-full bg-transparent text-sm focus:outline-none" placeholder="Введите навык и нажмите Enter..." type="text"/>
+            </div>
+        </div>
+
+        <div>
+            <label class="text-xs uppercase text-gray-500 font-semibold ml-1">Описание</label>
+            <textarea id="v-desc" class="w-full mt-2 bg-white dark:bg-gray-900 rounded-xl p-3 h-32 focus:outline-none resize-none" placeholder="Подробности о задачах и проекте..."></textarea>
+        </div>
+
+        <div class="h-20"></div> </main>
+
+    <div class="fixed bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-black/80 backdrop-blur-sm border-t border-gray-200 dark:border-gray-800">
+        <button onclick="publishVacancy()" class="w-full bg-blue-600 active:scale-95 transition-transform text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-600/30">
+            Опубликовать
         </button>
-    </footer>
-</div>
+    </div>
 
-<script>
-    let techStack = [];
-    function addTechTag() {
-        const input = document.getElementById('v-tech-input');
-        const val = input.value.trim();
-        if (val && !techStack.includes(val)) {
-            techStack.push(val);
-            renderTechTags();
-            input.value = '';
-        }
-    }
-    function renderTechTags() {
-        const container = document.getElementById('v-tech-list');
-        container.innerHTML = techStack.map((t, i) => `
-            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-sm font-medium bg-primary/15 text-primary">
-                ${t}
-                <button onclick="techStack.splice(${i}, 1); renderTechTags()"><span class="material-symbols-outlined text-[16px]">close</span></button>
-            </span>
-        `).join('');
-    }
-</script>
-
-<script src="app.js"></script>
-
+    <script src="app.js"></script>
 </body>
 </html>
